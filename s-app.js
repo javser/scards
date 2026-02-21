@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    const SHELL_VERSION = '2.2.0';
+    const SHELL_VERSION = '2.2.3';
     const STORAGE = { SHELL_VERSION: 'shell_version', GAME_VERSION: 'game_version' };
 
     let isPWA = false;
@@ -36,7 +36,7 @@
         let gameVer = '1.0.0';
 
         try {
-            const shellRes = await fetch('./s-version.json?t=' + Date.now());
+            const shellRes = await fetch('/scards/s-version.json?t=' + Date.now());
             if (shellRes.ok) {
                 const shellData = await shellRes.json();
                 shellVer = shellData.version;
@@ -69,7 +69,7 @@
         if (!isPWA) return;
 
         try {
-            const shellRes = await fetch('./s-version.json?t=' + Date.now());
+            const shellRes = await fetch('scards/s-version.json?t=' + Date.now());
             const gameRes = await fetch('./g-version.json?t=' + Date.now());
             
             if (!shellRes.ok || !gameRes.ok) return;
