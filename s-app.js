@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    const SHELL_VERSION = '2.2.4';
+    const SHELL_VERSION = '2.2.5';
     const STORAGE = { SHELL_VERSION: 'shell_version', GAME_VERSION: 'game_version' };
     const REPO_PATH = '/scards/'; // Для GitHub Pages
 
