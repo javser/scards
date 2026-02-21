@@ -1,0 +1,214 @@
+:root {
+    --color-bg-primary: #2c3e50;
+    --color-bg-secondary: #34495e;
+    --color-text-primary: #ecf0f1;
+    --color-accent: #e74c3c;
+    --color-success: #2ecc71;
+    --color-muted: #7f8c8d;
+    --color-update: #3498db;
+    --spacing-xs: 5px;
+    --spacing-sm: 10px;
+    --spacing-md: 20px;
+    --spacing-lg: 40px;
+    --timing-fast: 0.1s;
+    --size-button-width: 200px;
+    --size-font-heading: 2.5rem;
+    --size-font-button: 1.2rem;
+    --size-font-version: 0.875rem;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    line-height: 1.5;
+}
+
+.screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: var(--spacing-md);
+}
+
+.screen--active { display: flex; }
+.heading {
+    font-size: var(--size-font-heading);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: var(--spacing-lg);
+    text-align: center;
+}
+
+/* Версии */
+.versions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-lg);
+    text-align: center;
+}
+
+.version-item {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: center;
+    align-items: center;
+}
+
+.version-label {
+    color: var(--color-muted);
+    font-size: var(--size-font-version);
+}
+
+.version-value {
+    color: var(--color-text-primary);
+    font-weight: 600;
+    font-size: var(--size-font-version);
+}
+
+/* Кнопки */
+.menu-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.btn {
+    background: var(--color-accent);
+    color: var(--color-text-primary);
+    border: none;
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: var(--size-font-button);
+    margin: var(--spacing-xs);    border-radius: 8px;
+    cursor: pointer;
+    width: var(--size-button-width);
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    transition: transform var(--timing-fast) ease;
+    font-family: inherit;
+    font-weight: 600;
+}
+
+.btn:hover { filter: brightness(1.1); }
+.btn:active { transform: scale(0.95); }
+.btn:focus { outline: 3px solid var(--color-text-primary); outline-offset: 2px; }
+.btn--exit { background: var(--color-muted); }
+.btn--update { background: var(--color-update); display: none; }
+.btn--update.visible { display: block; }
+.btn--restart { background: var(--color-update); width: auto; padding: 10px 20px; font-size: 1rem; }
+
+/* Заголовок игры */
+.game-header {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    width: 100%;
+    justify-content: center;
+}
+
+/* Модалка */
+.modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 100;
+    padding: var(--spacing-md);
+}
+
+.modal--visible { display: flex; }
+.modal__title { color: var(--color-success); font-size: 2rem; margin-bottom: var(--spacing-md); text-align: center; }
+
+.modal-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+/* Прогресс обновления */
+.update-progress {
+    display: none;
+    width: 100%;
+    max-width: 300px;
+    margin-bottom: var(--spacing-md);
+}
+
+.update-progress.visible { display: block; }
+
+.progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: var(--spacing-xs);
+}
+
+.progress-bar {
+    height: 100%;
+    background: var(--color-success);
+    transition: width 0.3s ease;
+}
+
+#update-progress-text {
+    display: block;
+    text-align: center;
+    color: var(--color-text-primary);
+    font-size: var(--size-font-version);
+}
+
+/* Экран закрытия */
+.close-screen {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    text-align: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.close-screen.visible { display: flex; }
+/* PWA кнопки */
+@media all and (display-mode: standalone) {
+    .btn--exit { display: block; }
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+    :root {
+        --size-font-heading: 2rem;
+        --size-font-button: 1rem;
+        --size-button-width: 160px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn, .progress-bar { transition: none; }
+}
