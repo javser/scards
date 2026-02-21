@@ -1,7 +1,7 @@
 window.GameConfig = {
     id: 'cards',
     name: 'Карточки',
-    version: '1.0.1',
+    version: '1.0.2',
     
     grid: { rows: 4, cols: 4 },
     pairs: 8,
