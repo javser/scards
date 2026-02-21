@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v2.2.5';
+const CACHE_VERSION = 'v2.2.6';
 const CACHE_NAME = 'shell-cache-' + CACHE_VERSION;
 
 const ASSETS = [
@@ -42,7 +42,6 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
     const url = new URL(e.request.url);
 
-    // version.json всегда из сети
     if (url.pathname.includes('version.json')) {
         e.respondWith(fetch(e.request));
         return;
@@ -60,7 +59,7 @@ self.addEventListener('fetch', e => {
                 return res;
             }).catch(() => {
                 if (e.request.mode === 'navigate') {
-                    return caches.match('./s-index.html');
+                    return caches.match('/scards/s-index.html');
                 }
                 return null;
             });
