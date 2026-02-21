@@ -1,13 +1,94 @@
 (function() {
     'use strict';
 
-    const SHELL_VERSION = '2.2.6';
-    const GAME_VERSION_DEFAULT = '1.0.0';
-    const REPO_PATH = '/scards/';
+    // ==================== КОНФИГ ОБОЛОЧКИ ====================
+    const CONFIG = {
+        SHELL_VERSION: '2.2.7',
+        GAME_VERSION_DEFAULT: '1.0.0',
+        REPO_PATH: '/scards/',
+        DEBUG_MODE: true,  // ← Включить/выключить debug-панель
+        DEBUG_MAX_LINES: 5  // ← Количество строк в debug-панели
+    };
+    // =========================================================
 
     let isPWA = false;
     let swRegistration = null;
     let remoteVersions = { shell: null, game: null };
+
+    // ==================== DEBUG-ПАНЕЛЬ ====================
+    const Debug = {
+        enabled: CONFIG.DEBUG_MODE,
+        maxLines: CONFIG.DEBUG_MAX_LINES,
+        panel: null,
+        content: null,
+        logs: [],
+
+        init() {
+            if (!this.enabled) return;
+
+            this.panel = document.createElement('div');
+            this.panel.id = 'debug-panel';
+            this.panel.className = 'debug-panel';
+            
+            this.content = document.createElement('div');
+            this.content.className = 'debug-panel-content';
+            
+            this.panel.appendChild(this.content);
+            document.body.appendChild(this.panel);
+
+            // Перехват console.log
+            const originalLog = console.log;
+            const originalError = console.error;
+            const originalWarn = console.warn;
+
+            console.log = (...args) => {
+                originalLog.apply(console, args);
+                this.log('LOG', args.join(' '));
+            };
+
+            console.error = (...args) => {
+                originalError.apply(console, args);                this.log('ERR', args.join(' '), 'error');
+            };
+
+            console.warn = (...args) => {
+                originalWarn.apply(console, args);
+                this.log('WRN', args.join(' '), 'warn');
+            };
+
+            this.log('Debug panel initialized');
+        },
+
+        log(type, message, level = 'log') {
+            if (!this.enabled || !this.content) return;
+
+            const time = new Date().toLocaleTimeString();
+            const line = `[${time}] ${type}: ${message}`;
+            
+            this.logs.push(line);
+            if (this.logs.length > this.maxLines) {
+                this.logs.shift();
+            }
+
+            this.content.innerHTML = this.logs.map(l => 
+                `<div class="debug-line debug-line--${level}">${this.escapeHtml(l)}</div>`
+            ).join('');
+
+            // Авто-скролл вниз
+            this.panel.scrollTop = this.panel.scrollHeight;
+        },
+
+        clear() {
+            this.logs = [];
+            if (this.content) this.content.innerHTML = '';
+        },
+
+        escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    };
+    // ======================================================
 
     // --- PWA Детекция ---
     function checkPWA() {
@@ -15,12 +96,13 @@
                 window.navigator.standalone === true;
         
         const exitButtons = document.querySelectorAll('.btn--exit');
-        const updateButton = document.querySelector('.btn--update');
-        
+        const updateButton = document.querySelector('.btn--update');        
         if (!isPWA) {
             exitButtons.forEach(btn => btn.style.display = 'none');
             updateButton.style.display = 'none';
         }
+
+        Debug.log('PWA mode: ' + isPWA);
     }
 
     // --- Отображение версий ---
@@ -30,6 +112,8 @@
         
         if (shellEl) shellEl.textContent = 'v' + shellVer;
         if (gameEl) gameEl.textContent = 'v' + gameVer;
+
+        Debug.log('Versions displayed: shell=' + shellVer + ', game=' + gameVer);
     }
 
     // --- Сравнение версий ---
@@ -39,120 +123,109 @@
 
     // --- ШАГ 1: Запрос версий при старте ---
     async function checkForUpdates() {
-        console.log('[UPDATE] Checking for updates...');
+        Debug.log('Checking for updates...');
 
-        // Только PWA и только онлайн
         if (!isPWA) {
-            console.log('[UPDATE] Not PWA');
+            Debug.log('Not PWA, skipping');
             return;
         }
 
-        if (!navigator.onLine) {            console.log('[UPDATE] Offline');
+        if (!navigator.onLine) {
+            Debug.log('Offline, skipping');
             return;
         }
 
         try {
-            // Запрашиваем версии с сервера (без кэша)
-            const shellRes = await fetch(REPO_PATH + 's-version.json?t=' + Date.now());
-            const gameRes = await fetch(REPO_PATH + 'g-version.json?t=' + Date.now());
+            const shellRes = await fetch(CONFIG.REPO_PATH + 's-version.json?t=' + Date.now());
+            const gameRes = await fetch(CONFIG.REPO_PATH + 'g-version.json?t=' + Date.now());
             
             if (!shellRes.ok || !gameRes.ok) {
-                console.log('[UPDATE] Network error');
+                Debug.log('Network error fetching versions');
                 return;
             }
 
             const shellData = await shellRes.json();
             const gameData = await gameRes.json();
-
             remoteVersions.shell = shellData.version;
             remoteVersions.game = gameData.version;
 
-            // Получаем сохранённые версии
-            const storedShell = localStorage.getItem('shell_version') || SHELL_VERSION;
-            const storedGame = localStorage.getItem('game_version') || GAME_VERSION_DEFAULT;
+            const storedShell = localStorage.getItem('shell_version') || CONFIG.SHELL_VERSION;
+            const storedGame = localStorage.getItem('game_version') || CONFIG.GAME_VERSION_DEFAULT;
 
-            // Сравниваем
             const shellUpdate = compareVersions(remoteVersions.shell, storedShell) > 0;
             const gameUpdate = compareVersions(remoteVersions.game, storedGame) > 0;
 
-            console.log('[UPDATE] Versions:', {
-                shell: { stored: storedShell, remote: remoteVersions.shell },
-                game: { stored: storedGame, remote: remoteVersions.game },
-                updateAvailable: shellUpdate || gameUpdate
-            });
+            Debug.log('Versions: stored={' + storedShell + '/' + storedGame + '} remote={' + remoteVersions.shell + '/' + remoteVersions.game + '}');
 
-            // Показываем версии на экране
-            updateVersionDisplay(remoteVersions.shell, remoteVersions.game);
+            // ⚠️ ВАЖНО: Показываем ТЕКУЩИЕ (stored) версии до обновления
+            updateVersionDisplay(storedShell, storedGame);
 
-            // ШАГ 2: Если есть новая версия → показать кнопку
             if (shellUpdate || gameUpdate) {
                 document.querySelector('.btn--update').classList.add('visible');
-                console.log('[UPDATE] Update button shown');
+                Debug.log('Update available! Button shown');
             } else {
                 document.querySelector('.btn--update').classList.remove('visible');
-                console.log('[UPDATE] No update available');
+                Debug.log('No update available');
             }
 
         } catch (e) {
-            console.log('[UPDATE] Check failed:', e);
+            Debug.log('Check failed: ' + e.message);
         }
     }
-    // --- ШАГ 3: Скачивание файлов с прогрессом ---
+
+    // --- ШАГ 2: Скачивание файлов с прогрессом ---
     async function performUpdate() {
+        Debug.log('Update started...');
+
         const modal = document.getElementById('update-modal');
         const progressBar = document.getElementById('update-progress');
         const progressText = document.getElementById('update-progress-text');
         const actions = document.getElementById('update-actions');
 
-        // Показываем модалку с прогрессом
         modal.classList.add('modal--visible');
         progressBar.classList.add('visible');
         actions.style.display = 'none';
 
         const filesToCache = [
-            REPO_PATH + 's-index.html',
-            REPO_PATH + 's-styles.css',
-            REPO_PATH + 's-app.js',
-            REPO_PATH + 'g-game.js',
-            REPO_PATH + 'g-styles.css',
-            REPO_PATH + 'g-config.js',
-            REPO_PATH + 's-version.json',
-            REPO_PATH + 'g-version.json',
-            REPO_PATH + 's-manifest.json',
-            REPO_PATH + 's-sw.js'
+            CONFIG.REPO_PATH + 's-index.html',
+            CONFIG.REPO_PATH + 's-styles.css',
+            CONFIG.REPO_PATH + 's-app.js',
+            CONFIG.REPO_PATH + 'g-game.js',
+            CONFIG.REPO_PATH + 'g-styles.css',
+            CONFIG.REPO_PATH + 'g-config.js',
+            CONFIG.REPO_PATH + 's-version.json',
+            CONFIG.REPO_PATH + 'g-version.json',            CONFIG.REPO_PATH + 's-manifest.json',
+            CONFIG.REPO_PATH + 's-sw.js'
         ];
 
         const startTime = Date.now();
-        const minDuration = 1000; // Минимум 1 секунда
+        const minDuration = 1000;
 
-        // Скачиваем все файлы
         for (let i = 0; i < filesToCache.length; i++) {
             try {
-                await fetch(filesToCache[i] + '?t=' + Date.now(), { 
-                    cache: 'reload'
-                });
+                await fetch(filesToCache[i] + '?t=' + Date.now(), { cache: 'reload' });
                 
                 const percent = Math.round(((i + 1) / filesToCache.length) * 100);
                 progressText.textContent = percent + '%';
                 progressBar.querySelector('.progress-bar').style.width = percent + '%';
                 
-                console.log(`[UPDATE] Downloaded ${i + 1}/${filesToCache.length}`);
+                Debug.log('Downloaded ' + (i + 1) + '/' + filesToCache.length);
             } catch (e) {
-                console.error('[UPDATE] Failed:', filesToCache[i]);
+                Debug.log('Failed: ' + filesToCache[i]);
             }
         }
 
-        // Ждём минимум 1 секунду для анимации
         const elapsed = Date.now() - startTime;
         if (elapsed < minDuration) {
-            await new Promise(resolve => setTimeout(resolve, minDuration - elapsed));        }
-
-        // Активация Service Worker
-        if (swRegistration && swRegistration.waiting) {
-            swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            await new Promise(resolve => setTimeout(resolve, minDuration - elapsed));
         }
 
-        // Сохраняем новые версии
+        if (swRegistration && swRegistration.waiting) {
+            swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            Debug.log('SW activated');
+        }
+
+        // ⚠️ ВАЖНО: Обновляем версии в localStorage только после скачивания
         if (remoteVersions.shell) {
             localStorage.setItem('shell_version', remoteVersions.shell);
         }
@@ -160,49 +233,56 @@
             localStorage.setItem('game_version', remoteVersions.game);
         }
 
-        console.log('[UPDATE] Download complete, restarting...');
+        Debug.log('Update complete, restarting...');
 
-        // ШАГ 4: Перезапуск приложения
         setTimeout(() => location.reload(), 500);
     }
 
     function declineUpdate() {
         document.getElementById('update-modal').classList.remove('modal--visible');
+        Debug.log('Update declined');
     }
 
-    // --- Навигация ---
-    function showShell() {
+    // --- Навигация ---    function showShell() {
         document.getElementById('game-screen').classList.remove('screen--active');
         document.getElementById('shell-screen').classList.add('screen--active');
         document.getElementById('close-screen').classList.remove('visible');
+        Debug.log('Show shell');
     }
 
     function showGame() {
         document.getElementById('shell-screen').classList.remove('screen--active');
         document.getElementById('game-screen').classList.add('screen--active');
+        Debug.log('Show game');
     }
 
     function startGame() {
         if (window.Game && typeof window.Game.start === 'function') {
             window.Game.start();
-            history.pushState({ screen: 'game' }, '', REPO_PATH + '?game=cards');
+            history.pushState({ screen: 'game' }, '', CONFIG.REPO_PATH + '?game=cards');
             showGame();
+        } else {
+            Debug.log('Game API not available');
         }
     }
 
     function exitGame() {
         history.back();
+        Debug.log('Exit game');
     }
 
-    function handleExit() {        if (isPWA) {
+    function handleExit() {
+        if (isPWA) {
             if (window.close) window.close();
             document.getElementById('close-screen').classList.add('visible');
+            Debug.log('Exit PWA');
         } else {
             showShell();
         }
     }
 
     window.addEventListener('popstate', (e) => {
+        Debug.log('Popstate: ' + JSON.stringify(e.state));
         if (e.state?.screen === 'game') showGame();
         else showShell();
     });
@@ -210,12 +290,11 @@
     // --- Service Worker ---
     function registerSW() {
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register(REPO_PATH + 's-sw.js', { scope: REPO_PATH })
+            navigator.serviceWorker.register(CONFIG.REPO_PATH + 's-sw.js', { scope: CONFIG.REPO_PATH })
                 .then(reg => {
-                    swRegistration = reg;
-                    console.log('[SW] Registered');
+                    swRegistration = reg;                    Debug.log('SW registered');
                 })
-                .catch(err => console.error('[SW] Error:', err));
+                .catch(err => Debug.log('SW error: ' + err.message));
         }
     }
 
@@ -224,6 +303,8 @@
         document.getElementById('shell-screen').addEventListener('click', e => {
             const btn = e.target.closest('[data-action]');
             if (!btn) return;
+
+            Debug.log('Button: ' + btn.dataset.action);
 
             switch (btn.dataset.action) {
                 case 'play': startGame(); break;
@@ -243,6 +324,7 @@
                 case 'exit': exitGame(); break;
             }
         });
+
         document.getElementById('update-modal').addEventListener('click', e => {
             const btn = e.target.closest('[data-action]');
             if (!btn) return;
@@ -254,18 +336,18 @@
 
     // --- Инициализация ---
     async function init() {
-        console.log('[APP] Starting...');
+        Debug.init();  // ← Инициализация debug-панели
+        Debug.log('App starting v' + CONFIG.SHELL_VERSION);
         
         checkPWA();
         
-        // Показываем версии из localStorage сразу
-        const storedShell = localStorage.getItem('shell_version') || SHELL_VERSION;
-        const storedGame = localStorage.getItem('game_version') || GAME_VERSION_DEFAULT;
+        // Показываем ТЕКУЩИЕ (stored) версии сразу        const storedShell = localStorage.getItem('shell_version') || CONFIG.SHELL_VERSION;
+        const storedGame = localStorage.getItem('game_version') || CONFIG.GAME_VERSION_DEFAULT;
         updateVersionDisplay(storedShell, storedGame);
         
         registerSW();
         
-        // Запрос версий с сервера → показать кнопку если есть обновление
+        // Запрос версий → показать кнопку если есть обновление
         await checkForUpdates();
         
         initEventListeners();
@@ -278,8 +360,9 @@
     }
 
     window.Shell = {
-        versions: { shell: SHELL_VERSION, game: GAME_VERSION_DEFAULT },
-        navigateToShell: showShell
+        versions: { shell: CONFIG.SHELL_VERSION, game: CONFIG.GAME_VERSION_DEFAULT },
+        navigateToShell: showShell,
+        debug: Debug  // ← Доступ к debug из консоли
     };
 
     if (document.readyState === 'loading') {
