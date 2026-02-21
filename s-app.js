@@ -1,18 +1,19 @@
 (function() {
     'use strict';
 
-    const SHELL_VERSION = '2.2.3';
+    const SHELL_VERSION = '2.2.4';
     const STORAGE = { SHELL_VERSION: 'shell_version', GAME_VERSION: 'game_version' };
+    const REPO_PATH = '/scards/'; // Для GitHub Pages
 
     let isPWA = false;
     let swRegistration = null;
+    let updateAvailable = false;
 
     // --- PWA Детекция ---
     function checkPWA() {
         isPWA = window.matchMedia('(display-mode: standalone)').matches ||
                 window.navigator.standalone === true;
         
-        // Показываем кнопки только в PWA
         const exitButtons = document.querySelectorAll('.btn--exit');
         const updateButton = document.querySelector('.btn--update');
         
@@ -36,7 +37,7 @@
         let gameVer = '1.0.0';
 
         try {
-            const shellRes = await fetch('/scards/s-version.json?t=' + Date.now());
+            const shellRes = await fetch(REPO_PATH + 's-version.json?t=' + Date.now());
             if (shellRes.ok) {
                 const shellData = await shellRes.json();
                 shellVer = shellData.version;
@@ -46,8 +47,8 @@
             shellVer = localStorage.getItem(STORAGE.SHELL_VERSION) || SHELL_VERSION;
         }
 
-        try {
-            const gameRes = await fetch('./g-version.json?t=' + Date.now());            if (gameRes.ok) {
+        try {            const gameRes = await fetch(REPO_PATH + 'g-version.json?t=' + Date.now());
+            if (gameRes.ok) {
                 const gameData = await gameRes.json();
                 gameVer = gameData.version;
                 localStorage.setItem(STORAGE.GAME_VERSION, gameVer);
@@ -66,13 +67,19 @@
     }
 
     async function checkForUpdates() {
-        if (!isPWA) return;
+        // Только PWA и только онлайн
+        if (!isPWA || !navigator.onLine) {
+            return;
+        }
 
         try {
-            const shellRes = await fetch('scards/s-version.json?t=' + Date.now());
-            const gameRes = await fetch('./g-version.json?t=' + Date.now());
+            const shellRes = await fetch(REPO_PATH + 's-version.json?t=' + Date.now());
+            const gameRes = await fetch(REPO_PATH + 'g-version.json?t=' + Date.now());
             
-            if (!shellRes.ok || !gameRes.ok) return;
+            if (!shellRes.ok || !gameRes.ok) {
+                console.log('Update check: network error');
+                return;
+            }
 
             const shellData = await shellRes.json();
             const gameData = await gameRes.json();
@@ -84,11 +91,12 @@
             const gameUpdate = compareVersions(gameData.version, storedGame) > 0;
 
             if (shellUpdate || gameUpdate) {
+                updateAvailable = true;
                 document.querySelector('.btn--update').classList.add('visible');
+                console.log('Update available:', { shell: shellUpdate, game: gameUpdate });
             }
         } catch (e) {
-            console.log('Update check failed:', e);
-        }
+            console.log('Update check failed:', e);        }
     }
 
     // --- Обновление с прогрессом ---
@@ -97,38 +105,82 @@
         const progressBar = document.getElementById('update-progress');
         const progressText = document.getElementById('update-progress-text');
         const actions = document.getElementById('update-actions');
+
         modal.classList.add('modal--visible');
         progressBar.classList.add('visible');
         actions.style.display = 'none';
 
         const filesToCache = [
-            './s-index.html', './s-styles.css', './s-app.js',
-            './g-game.js', './g-styles.css', './g-config.js',
-            './s-version.json', './g-version.json',
-            './s-manifest.json', './s-sw.js'
+            REPO_PATH + 's-index.html',
+            REPO_PATH + 's-styles.css',
+            REPO_PATH + 's-app.js',
+            REPO_PATH + 'g-game.js',
+            REPO_PATH + 'g-styles.css',
+            REPO_PATH + 'g-config.js',
+            REPO_PATH + 's-version.json',
+            REPO_PATH + 'g-version.json',
+            REPO_PATH + 's-manifest.json',
+            REPO_PATH + 's-sw.js'
         ];
+
+        const startTime = Date.now();
+        const minDuration = 1000; // Минимум 1 секунда
 
         for (let i = 0; i < filesToCache.length; i++) {
             try {
-                await fetch(filesToCache[i] + '?t=' + Date.now(), { cache: 'reload' });
+                // Fetch с bypass кэша
+                await fetch(filesToCache[i] + '?t=' + Date.now(), { 
+                    cache: 'reload',
+                    mode: 'cors'
+                });
+                
                 const percent = Math.round(((i + 1) / filesToCache.length) * 100);
                 progressText.textContent = percent + '%';
                 progressBar.querySelector('.progress-bar').style.width = percent + '%';
+                
+                console.log(`Cached ${i + 1}/${filesToCache.length}: ${filesToCache[i]}`);
             } catch (e) {
-                console.error('Failed to cache:', filesToCache[i]);
+                console.error('Failed to cache:', filesToCache[i], e);
+                // Продолжаем даже если файл не загрузился
             }
         }
 
-        // Активация новой версии SW
-        if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+        // Ждём минимум 1 секунду для анимации        const elapsed = Date.now() - startTime;
+        if (elapsed < minDuration) {
+            await new Promise(resolve => setTimeout(resolve, minDuration - elapsed));
         }
 
-        setTimeout(() => location.reload(), 1000);
+        // Активация новой версии SW
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+        } else if (navigator.serviceWorker && swRegistration) {
+            // Если контроллера нет, ждём активации
+            await new Promise(resolve => {
+                if (swRegistration.waiting) {
+                    swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    resolve();
+                } else {
+                    swRegistration.addEventListener('updatefound', () => {
+                        const newWorker = swRegistration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed') {
+                                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                resolve();
+                            }
+                        });
+                    });
+                }
+            });
+        }
+
+        // Перезагрузка
+        setTimeout(() => location.reload(), 500);
     }
 
     function declineUpdate() {
         document.getElementById('update-modal').classList.remove('modal--visible');
+        updateAvailable = false;
+        document.querySelector('.btn--update').classList.remove('visible');
     }
 
     // --- Навигация ---
@@ -142,10 +194,10 @@
         document.getElementById('shell-screen').classList.remove('screen--active');
         document.getElementById('game-screen').classList.add('screen--active');
     }
-
     function startGame() {
         if (window.Game && typeof window.Game.start === 'function') {
-            window.Game.start();            history.pushState({ screen: 'game' }, '', '?game=cards');
+            window.Game.start();
+            history.pushState({ screen: 'game' }, '', REPO_PATH + '?game=cards');
             showGame();
         } else {
             console.error('Game API not available');
@@ -179,22 +231,30 @@
     // --- Service Worker ---
     function registerSW() {
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./s-sw.js', { scope: './' })
+            navigator.serviceWorker.register(REPO_PATH + 's-sw.js', { scope: REPO_PATH })
                 .then(reg => {
                     swRegistration = reg;
+                    
+                    // Проверка обновлений при установке нового SW
                     reg.addEventListener('updatefound', () => {
                         const newWorker = reg.installing;
                         if (newWorker) {
                             newWorker.addEventListener('statechange', () => {
                                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // Новый SW готов, показываем кнопку
                                     checkForUpdates();
-                                }
-                            });
+                                }                            });
                         }
                     });
+
+                    // Проверка при загрузке
+                    if (reg.active) {
+                        checkForUpdates();
+                    }
                 })
                 .catch(err => console.error('SW registration failed:', err));
-        }    }
+        }
+    }
 
     // --- Обработчики событий ---
     function initEventListeners() {
@@ -232,7 +292,6 @@
                     break;
             }
         });
-
         // Модалка
         document.getElementById('update-modal').addEventListener('click', e => {
             const btn = e.target.closest('[data-action]');
@@ -243,14 +302,15 @@
             } else if (btn.dataset.action === 'decline-update') {
                 declineUpdate();
             }
-        });    }
+        });
+    }
 
     // --- Инициализация ---
     async function init() {
         checkPWA();
         registerSW();
         await checkVersions();
-        checkForUpdates();
+        // checkForUpdates вызывается в registerSW после проверки SW
         initEventListeners();
 
         // Проверка URL при загрузке
