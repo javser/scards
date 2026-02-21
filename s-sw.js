@@ -1,18 +1,18 @@
-const CACHE_VERSION = 'v2.2.2';
+const CACHE_VERSION = 'v2.2.3';
 const CACHE_NAME = 'shell-cache-' + CACHE_VERSION;
 
 const ASSETS = [
-    './s-index.html',
-    './s-styles.css',
-    './s-app.js',
-    './s-manifest.json',
-    './s-version.json',
-    './g-game.js',
-    './g-styles.css',
-    './g-config.js',
-    './g-version.json',
-    './icons/icon-192.png',
-    './icons/icon-512.png'
+    '/scards/s-index.html',
+    '/scards/s-styles.css',
+    '/scards/s-app.js',
+    '/scards/s-manifest.json',
+    '/scards/s-version.json',
+    '/scards/g-game.js',
+    '/scards/g-styles.css',
+    '/scards/g-config.js',
+    '/scards/g-version.json',
+    '/scards/icons/icon-192.png',
+    '/scards/icons/icon-512.png'
 ];
 
 self.addEventListener('message', e => {
