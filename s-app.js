@@ -250,4 +250,144 @@
         Debug.log('Update declined');
     }
 
-    //
+    // --- Навигация ---
+    function showShell() {
+        document.getElementById('game-screen').classList.remove('screen--active');
+        document.getElementById('shell-screen').classList.add('screen--active');
+        document.getElementById('close-screen').classList.remove('visible');
+        Debug.log('Show shell');
+    }
+
+    function showGame() {
+        document.getElementById('shell-screen').classList.remove('screen--active');
+        document.getElementById('game-screen').classList.add('screen--active');
+        Debug.log('Show game');
+    }
+
+    function startGame() {
+        if (window.Game && typeof window.Game.start === 'function') {
+            window.Game.start();
+            history.pushState({ screen: 'game' }, '', CONFIG.REPO_PATH + '?game=cards');
+            showGame();
+        } else {
+            Debug.log('Game not ready', 'error');
+        }
+    }
+
+    function exitGame() {
+        history.back();
+        Debug.log('Exit game');
+    }
+
+    function handleExit() {
+        if (isPWA) {
+            if (window.close) window.close();
+            document.getElementById('close-screen').classList.add('visible');
+            Debug.log('Exit PWA');
+        } else {
+            showShell();
+        }
+    }
+
+    window.addEventListener('popstate', (e) => {
+        Debug.log('Popstate');
+        if (e.state?.screen === 'game') showGame();
+        else showShell();    });
+
+    // --- Service Worker ---
+    function registerSW() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register(CONFIG.REPO_PATH + 's-sw.js', { scope: CONFIG.REPO_PATH })
+                .then(reg => {
+                    swRegistration = reg;
+                    Debug.log('SW registered');
+                })
+                .catch(err => Debug.log('SW error: ' + err.message));
+        }
+    }
+
+    // --- Обработчики событий ---
+    function initEventListeners() {
+        Debug.log('Init listeners');
+
+        // Оболочка
+        const shellScreen = document.getElementById('shell-screen');
+        if (shellScreen) {
+            shellScreen.addEventListener('click', function(e) {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+
+                Debug.log('Click: ' + btn.dataset.action);
+
+                switch (btn.dataset.action) {
+                    case 'play': startGame(); break;
+                    case 'update': performUpdate(); break;
+                    case 'exit': handleExit(); break;
+                }
+            });
+        } else {
+            Debug.log('ERROR: shell-screen not found', 'error');
+        }
+
+        // Игра
+        const gameScreen = document.getElementById('game-screen');
+        if (gameScreen) {
+            gameScreen.addEventListener('click', function(e) {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+
+                switch (btn.dataset.action) {
+                    case 'restart':
+                        if (window.Game) window.Game.start();
+                        break;
+                    case 'exit': exitGame(); break;
+                }            });
+        }
+
+        // Модалка
+        const updateModal = document.getElementById('update-modal');
+        if (updateModal) {
+            updateModal.addEventListener('click', function(e) {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+
+                if (btn.dataset.action === 'confirm-update') performUpdate();
+                else if (btn.dataset.action === 'decline-update') declineUpdate();
+            });
+        }
+    }
+
+    // --- Инициализация ---
+    async function init() {
+        Debug.init();
+        Debug.log('App start v' + CONFIG.SHELL_VERSION);
+        
+        checkPWA();
+        
+        // Показываем stored версии сразу
+        const storedShell = localStorage.getItem('shell_version') || CONFIG.SHELL_VERSION;
+        const storedGame = localStorage.getItem('game_version') || CONFIG.GAME_VERSION_DEFAULT;
+        updateVersionDisplay(storedShell, storedGame);
+        
+        registerSW();
+        initEventListeners();
+        await checkForUpdates();
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('game') === 'cards' && window.Game) {
+            window.Game.start();
+            showGame();
+        }
+    }
+
+    window.Shell = {
+        versions: { shell: CONFIG.SHELL_VERSION, game: CONFIG.GAME_VERSION_DEFAULT },
+        navigateToShell: showShell,
+        debug: Debug
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }})();
