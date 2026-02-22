@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v2.2.7';
+const CACHE_VERSION = 'v2.2.8';
 const CACHE_NAME = 'shell-cache-' + CACHE_VERSION;
 
 const ASSETS = [
