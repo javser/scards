@@ -92,11 +92,15 @@
         if (!isPWA) {
             exitButtons.forEach(btn => btn.style.display = 'none');
             updateButton.style.display = 'none';
-        }
-    }
+            Debug.log('Web mode: buttons hidden');
+        } else {
+            exitButtons.forEach(btn => btn.style.display = 'block');
+            Debug.log('PWA mode: exit buttons shown');
+        }    }
 
     function updateVersionDisplay(shellVer, gameVer) {
-        const shellEl = document.getElementById('shell-version');        const gameEl = document.getElementById('game-version');
+        const shellEl = document.getElementById('shell-version');
+        const gameEl = document.getElementById('game-version');
         
         Debug.log('Update versions: shell=' + shellVer + ', game=' + gameVer);
 
@@ -141,11 +145,11 @@
 
             const shellData = await shellRes.json();
             const gameData = await gameRes.json();
-
             remoteVersions.shell = shellData.version;
             remoteVersions.game = gameData.version;
 
-            const storedShell = localStorage.getItem('shell_version') || CONFIG.SHELL_VERSION;            const storedGame = localStorage.getItem('game_version') || CONFIG.GAME_VERSION_DEFAULT;
+            const storedShell = localStorage.getItem('shell_version') || CONFIG.SHELL_VERSION;
+            const storedGame = localStorage.getItem('game_version') || CONFIG.GAME_VERSION_DEFAULT;
 
             const shellUpdate = compareVersions(remoteVersions.shell, storedShell) > 0;
             const gameUpdate = compareVersions(remoteVersions.game, storedGame) > 0;
@@ -190,11 +194,11 @@
             CONFIG.REPO_PATH + 's-styles.css',
             CONFIG.REPO_PATH + 's-app.js',
             CONFIG.REPO_PATH + 'g-game.js',
-            CONFIG.REPO_PATH + 'g-styles.css',
-            CONFIG.REPO_PATH + 'g-config.js',
+            CONFIG.REPO_PATH + 'g-styles.css',            CONFIG.REPO_PATH + 'g-config.js',
             CONFIG.REPO_PATH + 's-version.json',
             CONFIG.REPO_PATH + 'g-version.json',
-            CONFIG.REPO_PATH + 's-manifest.json',            CONFIG.REPO_PATH + 's-sw.js'
+            CONFIG.REPO_PATH + 's-manifest.json',
+            CONFIG.REPO_PATH + 's-sw.js'
         ];
 
         const startTime = Date.now();
@@ -239,11 +243,11 @@
         document.getElementById('update-modal').classList.remove('modal--visible');
         Debug.log('Update declined');
     }
-
     function showShell() {
         document.getElementById('game-screen').classList.remove('screen--active');
         document.getElementById('shell-screen').classList.add('screen--active');
-        document.getElementById('close-screen').classList.remove('visible');        Debug.log('Show shell');
+        document.getElementById('close-screen').classList.remove('visible');
+        Debug.log('Show shell');
     }
 
     function showGame() {
@@ -270,3 +274,106 @@
     function handleExit() {
         if (isPWA) {
             if (window.close) window.close();
+            document.getElementById('close-screen').classList.add('visible');
+            Debug.log('Exit PWA');
+        } else {
+            showShell();
+        }
+    }
+
+    window.addEventListener('popstate', (e) => {
+        Debug.log('Popstate');
+        if (e.state?.screen === 'game') showGame();
+        else showShell();
+    });
+
+    function registerSW() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register(CONFIG.REPO_PATH + 's-sw.js', { scope: CONFIG.REPO_PATH })
+                .then(reg => {
+                    swRegistration = reg;
+                    Debug.log('SW registered');                })
+                .catch(err => Debug.log('SW error: ' + err.message));
+        }
+    }
+
+    function initEventListeners() {
+        Debug.log('Init listeners');
+
+        const shellScreen = document.getElementById('shell-screen');
+        if (shellScreen) {
+            shellScreen.addEventListener('click', function(e) {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+
+                Debug.log('Click: ' + btn.dataset.action);
+
+                switch (btn.dataset.action) {
+                    case 'play': startGame(); break;
+                    case 'update': performUpdate(); break;
+                    case 'exit': handleExit(); break;
+                }
+            });
+        } else {
+            Debug.log('ERROR: shell-screen not found', 'error');
+        }
+
+        const gameScreen = document.getElementById('game-screen');
+        if (gameScreen) {
+            gameScreen.addEventListener('click', function(e) {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+
+                switch (btn.dataset.action) {
+                    case 'restart':
+                        if (window.Game) window.Game.start();
+                        break;
+                    case 'exit': exitGame(); break;
+                }
+            });
+        }
+
+        const updateModal = document.getElementById('update-modal');
+        if (updateModal) {
+            updateModal.addEventListener('click', function(e) {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+
+                if (btn.dataset.action === 'confirm-update') performUpdate();
+                else if (btn.dataset.action === 'decline-update') declineUpdate();
+            });        }
+    }
+
+    async function init() {
+        Debug.init();
+        Debug.log('App start v' + CONFIG.SHELL_VERSION);
+        
+        checkPWA();
+        
+        const storedShell = localStorage.getItem('shell_version') || CONFIG.SHELL_VERSION;
+        const storedGame = localStorage.getItem('game_version') || CONFIG.GAME_VERSION_DEFAULT;
+        updateVersionDisplay(storedShell, storedGame);
+        
+        registerSW();
+        initEventListeners();
+        await checkForUpdates();
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('game') === 'cards' && window.Game) {
+            window.Game.start();
+            showGame();
+        }
+    }
+
+    window.Shell = {
+        versions: { shell: CONFIG.SHELL_VERSION, game: CONFIG.GAME_VERSION_DEFAULT },
+        navigateToShell: showShell,
+        debug: Debug
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
