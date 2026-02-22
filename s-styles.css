@@ -55,7 +55,6 @@ body {
     text-align: center;
 }
 
-/* Версии */
 .versions {
     display: flex;
     flex-direction: column;
@@ -82,7 +81,6 @@ body {
     font-size: var(--size-font-version);
 }
 
-/* Кнопки */
 .menu-actions {
     display: flex;
     flex-direction: column;
@@ -96,9 +94,9 @@ body {
     border: none;
     padding: var(--spacing-md) var(--spacing-lg);
     font-size: var(--size-font-button);
-    margin: var(--spacing-xs);    border-radius: 8px;
-    cursor: pointer;
-    width: var(--size-button-width);
+    margin: var(--spacing-xs);
+    border-radius: 8px;
+    cursor: pointer;    width: var(--size-button-width);
     text-align: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     transition: transform var(--timing-fast) ease;
@@ -109,12 +107,11 @@ body {
 .btn:hover { filter: brightness(1.1); }
 .btn:active { transform: scale(0.95); }
 .btn:focus { outline: 3px solid var(--color-text-primary); outline-offset: 2px; }
-.btn--exit { background: var(--color-muted); }
+.btn--exit { background: var(--color-muted); display: none; }
 .btn--update { background: var(--color-update); display: none; }
 .btn--update.visible { display: block; }
 .btn--restart { background: var(--color-update); width: auto; padding: 10px 20px; font-size: 1rem; }
 
-/* Заголовок игры */
 .game-header {
     display: flex;
     gap: var(--spacing-sm);
@@ -123,7 +120,6 @@ body {
     justify-content: center;
 }
 
-/* Модалка */
 .modal {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -145,12 +141,11 @@ body {
     flex-wrap: wrap;
     justify-content: center;
 }
-/* Прогресс обновления */
+
 .update-progress {
     display: none;
     width: 100%;
-    max-width: 300px;
-    margin-bottom: var(--spacing-md);
+    max-width: 300px;    margin-bottom: var(--spacing-md);
 }
 
 .update-progress.visible { display: block; }
@@ -177,7 +172,6 @@ body {
     font-size: var(--size-font-version);
 }
 
-/* Экран закрытия */
 .close-screen {
     display: none;
     flex-direction: column;
@@ -195,49 +189,37 @@ body {
 }
 
 .close-screen.visible { display: flex; }
-/* PWA кнопки */
-@media all and (display-mode: standalone) {
-    .btn--exit { display: block; }
-}
 
-/* Адаптивность */
-@media (max-width: 480px) {
-    :root {
-        --size-font-heading: 2rem;
-        --size-font-button: 1rem;
-        --size-button-width: 160px;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .btn, .progress-bar { transition: none; }
-}
-/* ==================== DEBUG PANEL ==================== */
 .debug-panel {
     position: fixed;
     bottom: 0;
     left: 0;
-    width: 100%;
-    height: 80px;  /* 4 строки × 20px */
-    background: rgba(0, 0, 0, 0.9);
+    width: 100%;    height: 160px;
+    background: rgba(0, 0, 0, 0.95);
     color: #00ff00;
     font-family: 'Courier New', monospace;
-    font-size: 11px;
+    font-size: 10px;
     line-height: 18px;
     padding: 5px;
     overflow-y: auto;
-    z-index: 9999;
+    z-index: 99;
     border-top: 1px solid #333;
-    display: none;  /* Скрыта по умолчанию */
+    display: none;
+    pointer-events: none;
 }
 
-.debug-panel.visible {
+.debug-panel * {
+    pointer-events: auto;
+}
+
+body.debug-active .debug-panel {
     display: block;
 }
 
 .debug-panel-content {
     white-space: pre-wrap;
     word-break: break-all;
+    pointer-events: none;
 }
 
 .debug-line {
@@ -249,8 +231,14 @@ body {
 .debug-line--error { color: #ff4444; }
 .debug-line--warn { color: #ffaa00; }
 
-/* Показываем если DEBUG_MODE = true */
-body.debug-mode .debug-panel {
-    display: block;
+@media (max-width: 480px) {
+    :root {
+        --size-font-heading: 2rem;
+        --size-font-button: 1rem;
+        --size-button-width: 160px;
+    }
 }
-/* ===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .btn, .progress-bar { transition: none; }
+}
