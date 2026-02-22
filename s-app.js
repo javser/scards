@@ -31,6 +31,8 @@
                 return;
             }
 
+            document.body.classList.add('debug-active');
+
             const originalLog = console.log;
             const originalError = console.error;
             const originalWarn = console.warn;
@@ -46,8 +48,8 @@
                 originalError.apply(console, args);
                 self.log('ERR', args.join(' '), 'error');
             };
-
-            console.warn = function(...args) {                originalWarn.apply(console, args);
+            console.warn = function(...args) {
+                originalWarn.apply(console, args);
                 self.log('WRN', args.join(' '), 'warn');
             };
 
@@ -94,9 +96,9 @@
             updateButton.style.display = 'none';
             Debug.log('Web mode: buttons hidden');
         } else {
-            exitButtons.forEach(btn => btn.style.display = 'block');
-            Debug.log('PWA mode: exit buttons shown');
-        }    }
+            exitButtons.forEach(btn => btn.style.display = 'block');            Debug.log('PWA mode: exit buttons shown');
+        }
+    }
 
     function updateVersionDisplay(shellVer, gameVer) {
         const shellEl = document.getElementById('shell-version');
@@ -143,8 +145,8 @@
                 return;
             }
 
-            const shellData = await shellRes.json();
-            const gameData = await gameRes.json();
+            const shellData = await shellRes.json();            const gameData = await gameRes.json();
+
             remoteVersions.shell = shellData.version;
             remoteVersions.game = gameData.version;
 
@@ -192,9 +194,9 @@
         const filesToCache = [
             CONFIG.REPO_PATH + 's-index.html',
             CONFIG.REPO_PATH + 's-styles.css',
-            CONFIG.REPO_PATH + 's-app.js',
-            CONFIG.REPO_PATH + 'g-game.js',
-            CONFIG.REPO_PATH + 'g-styles.css',            CONFIG.REPO_PATH + 'g-config.js',
+            CONFIG.REPO_PATH + 's-app.js',            CONFIG.REPO_PATH + 'g-game.js',
+            CONFIG.REPO_PATH + 'g-styles.css',
+            CONFIG.REPO_PATH + 'g-config.js',
             CONFIG.REPO_PATH + 's-version.json',
             CONFIG.REPO_PATH + 'g-version.json',
             CONFIG.REPO_PATH + 's-manifest.json',
@@ -241,8 +243,8 @@
 
     function declineUpdate() {
         document.getElementById('update-modal').classList.remove('modal--visible');
-        Debug.log('Update declined');
-    }
+        Debug.log('Update declined');    }
+
     function showShell() {
         document.getElementById('game-screen').classList.remove('screen--active');
         document.getElementById('shell-screen').classList.add('screen--active');
@@ -290,9 +292,9 @@
     function registerSW() {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register(CONFIG.REPO_PATH + 's-sw.js', { scope: CONFIG.REPO_PATH })
-                .then(reg => {
-                    swRegistration = reg;
-                    Debug.log('SW registered');                })
+                .then(reg => {                    swRegistration = reg;
+                    Debug.log('SW registered');
+                })
                 .catch(err => Debug.log('SW error: ' + err.message));
         }
     }
@@ -339,9 +341,9 @@
                 const btn = e.target.closest('[data-action]');
                 if (!btn) return;
 
-                if (btn.dataset.action === 'confirm-update') performUpdate();
-                else if (btn.dataset.action === 'decline-update') declineUpdate();
-            });        }
+                if (btn.dataset.action === 'confirm-update') performUpdate();                else if (btn.dataset.action === 'decline-update') declineUpdate();
+            });
+        }
     }
 
     async function init() {
