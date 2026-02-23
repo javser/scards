@@ -7,12 +7,11 @@
     <base href="/scards/">
     <link rel="manifest" href="./s-manifest.json">
     <link rel="apple-touch-icon" href="./icons/icon-192.png">
-    <title>Карточки</title>
+    <title>Карточки v2.2.10</title>
     <link rel="stylesheet" href="./s-styles.css">
     <link rel="stylesheet" href="./g-styles.css">
 </head>
 <body>
-    <!-- ЭКРАН ОБОЛОЧКИ -->
     <section id="shell-screen" class="screen screen--active">
         <h1 class="heading">Карточки</h1>
         
@@ -34,7 +33,6 @@
         </div>
     </section>
 
-    <!-- ЭКРАН ИГРЫ -->
     <section id="game-screen" class="screen">
         <div class="game-header">
             <button class="btn btn--restart" data-action="restart">С начала</button>
@@ -43,7 +41,6 @@
         <div id="game-container"></div>
     </section>
 
-    <!-- МОДАЛКА ОБНОВЛЕНИЯ -->
     <div id="update-modal" class="modal">
         <h2 class="modal__title">Доступно обновление</h2>
         <div class="update-progress" id="update-progress">
@@ -58,13 +55,11 @@
         </div>
     </div>
 
-    <!-- ЭКРАН ЗАКРЫТИЯ -->
     <div id="close-screen" class="close-screen">
         <h1>Приложение можно закрыть</h1>
         <p>Используйте кнопку "Назад" на устройстве</p>
     </div>
 
-    <!-- DEBUG-ПАНЕЛЬ -->
     <div id="debug-panel" class="debug-panel">
         <div class="debug-panel-content"></div>
     </div>
