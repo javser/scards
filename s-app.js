@@ -2,8 +2,8 @@
     'use strict';
 
     const CONFIG = {
-        SHELL_VERSION: '2.3.12',
-        GAME_VERSION_DEFAULT: '1.0.2',
+        SHELL_VERSION: '2.4.0',
+        GAME_VERSION_DEFAULT: '1.0.3',
         REPO_PATH: '/scards/',
         DEBUG_MAX_LINES: 8
     };
@@ -292,7 +292,8 @@
     function showShell() {
         document.getElementById('game-screen').classList.remove('screen--active');
         document.getElementById('shell-screen').classList.add('screen--active');
-        document.getElementById('close-screen').classList.remove('visible');        Debug.log('Show shell');
+        document.getElementById('close-screen').classList.remove('visible');        document.getElementById('victory-modal').classList.remove('modal--visible');
+        Debug.log('Show shell');
     }
 
     function showGame() {
@@ -302,6 +303,7 @@
     }
 
     function startGame() {
+        document.getElementById('victory-modal').classList.remove('modal--visible');
         if (window.Game && typeof window.Game.start === 'function') {
             window.Game.start();
             history.pushState({ screen: 'game' }, '', CONFIG.REPO_PATH + '?game=cards');
@@ -313,6 +315,9 @@
     }
 
     function exitGame() {
+        if (window.Game && typeof window.Game.exit === 'function') {
+            window.Game.exit();
+        }
         history.back();
         Debug.log('Exit game');
     }
@@ -327,12 +332,16 @@
         }
     }
 
+    function closeVictoryModal() {
+        document.getElementById('victory-modal').classList.remove('modal--visible');
+        Debug.log('Victory modal closed');
+    }
+
     window.addEventListener('popstate', (e) => {
         Debug.log('Popstate');
         if (e.state?.screen === 'game') showGame();
         else showShell();
     });
-
     function registerSW() {
         if (!isPWA) {
             Debug.log('SW: not PWA, skip registration');
@@ -341,7 +350,8 @@
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register(CONFIG.REPO_PATH + 's-sw.js', { scope: CONFIG.REPO_PATH })
-                .then(reg => {                    swRegistration = reg;
+                .then(reg => {
+                    swRegistration = reg;
                     Debug.log('SW registered');
                 })
                 .catch(err => Debug.log('SW error: ' + err.message));
@@ -380,8 +390,7 @@
                         if (window.Game) window.Game.start();
                         break;
                     case 'exit': exitGame(); break;
-                }
-            });
+                }            });
         }
 
         const updateModal = document.getElementById('update-modal');
@@ -390,7 +399,22 @@
                 const btn = e.target.closest('[data-action]');
                 if (!btn) return;
 
-                if (btn.dataset.action === 'confirm-update') performUpdate();                else if (btn.dataset.action === 'decline-update') declineUpdate();
+                if (btn.dataset.action === 'confirm-update') performUpdate();
+                else if (btn.dataset.action === 'decline-update') declineUpdate();
+            });
+        }
+
+        const victoryModal = document.getElementById('victory-modal');
+        if (victoryModal) {
+            victoryModal.addEventListener('click', function(e) {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+
+                if (btn.dataset.action === 'play-again') startGame();
+                else if (btn.dataset.action === 'close-victory') {
+                    closeVictoryModal();
+                    showShell();
+                }
             });
         }
     }
@@ -415,7 +439,6 @@
             showGame();
         }
     }
-
     window.Shell = {
         versions: { shell: CONFIG.SHELL_VERSION, game: CONFIG.GAME_VERSION_DEFAULT },
         navigateToShell: showShell,
