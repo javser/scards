@@ -2,68 +2,63 @@
     'use strict';
 
     const CONFIG = {
-        SHELL_VERSION: '2.2.11',
+        SHELL_VERSION: '2.3.0',
         GAME_VERSION_DEFAULT: '1.0.2',
         REPO_PATH: '/scards/',
-        DEBUG_MODE: true,
         DEBUG_MAX_LINES: 8
     };
 
     let isPWA = false;
+    let debugEnabled = false;
     let swRegistration = null;
     let remoteVersions = { shell: null, game: null };
+    let tapCount = 0;
+    let tapTimer = null;
 
     const Debug = {
-        enabled: CONFIG.DEBUG_MODE,
-        maxLines: CONFIG.DEBUG_MAX_LINES,
         panel: null,
         content: null,
         logs: [],
 
         init() {
-            if (!this.enabled) return;
-
             this.panel = document.getElementById('debug-panel');
-            this.content = document.getElementById('debug-panel')?.querySelector('.debug-panel-content');
+            this.content = this.panel?.querySelector('.debug-panel-content');
             
             if (!this.panel || !this.content) {
                 console.warn('Debug panel elements not found');
                 return;
             }
 
-            document.body.classList.add('debug-active');
+            const saved = localStorage.getItem('debug_enabled');
+            debugEnabled = saved === 'true';
 
-            const originalLog = console.log;
-            const originalError = console.error;
-            const originalWarn = console.warn;
-
-            const self = this;
-
-            console.log = function(...args) {
-                originalLog.apply(console, args);
-                self.log('LOG', args.join(' '));
-            };
-
-            console.error = function(...args) {
-                originalError.apply(console, args);
-                self.log('ERR', args.join(' '), 'error');
-            };
-            console.warn = function(...args) {
-                originalWarn.apply(console, args);
-                self.log('WRN', args.join(' '), 'warn');
-            };
-
-            this.log('Debug initialized');
+            this.updateVisibility();
+            this.log('=== SHELL v' + CONFIG.SHELL_VERSION + ' ===');
         },
 
-        log(type, message, level) {
-            if (!this.enabled || !this.content) return;
+        updateVisibility() {
+            if (!this.panel) return;
+            if (debugEnabled) {
+                document.body.classList.add('debug-active');
+            } else {
+                document.body.classList.remove('debug-active');
+            }
+        },
+
+        toggle() {
+            debugEnabled = !debugEnabled;
+            localStorage.setItem('debug_enabled', debugEnabled);            this.updateVisibility();
+            this.log('Debug: ' + (debugEnabled ? 'ON' : 'OFF'));
+        },
+
+        log(message, level = 'log') {
+            if (!debugEnabled || !this.content) return;
 
             const time = new Date().toLocaleTimeString();
-            const line = `[${time}] ${type}: ${message}`;
+            const line = `[${time}] ${message}`;
             
             this.logs.push(line);
-            if (this.logs.length > this.maxLines) {
+            if (this.logs.length > CONFIG.DEBUG_MAX_LINES) {
                 this.logs.shift();
             }
 
@@ -96,12 +91,12 @@
         if (!isPWA) {
             exitButtons.forEach(btn => btn.style.display = 'none');
             updateButton.style.display = 'none';
-            Debug.log('Web mode: buttons hidden');        } else {
+            Debug.log('Web mode: buttons hidden');
+        } else {
             exitButtons.forEach(btn => btn.style.display = 'block');
             Debug.log('PWA mode: exit buttons shown');
         }
     }
-
     function updateVersionDisplay(shellVer, gameVer) {
         const shellEl = document.getElementById('shell-version');
         const gameEl = document.getElementById('game-version');
@@ -121,12 +116,36 @@
         }
     }
 
+    function initDebugToggle() {
+        const versionsEl = document.querySelector('.versions');
+        if (!versionsEl) return;
+
+        versionsEl.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const now = Date.now();
+
+            if (tapTimer && now - tapTimer > 250) {
+                tapCount = 0;
+            }
+
+            tapCount++;
+            tapTimer = now;
+
+            if (tapCount === 4) {
+                tapCount = 0;
+                tapTimer = null;
+                Debug.toggle();
+            }
+        });
+    }
+
     function compareVersions(v1, v2) {
         return v1.localeCompare(v2, undefined, { numeric: true });
     }
 
-    async function checkForUpdates() {
-        Debug.log('Check updates...');
+    async function checkForUpdates() {        Debug.log('Check updates...');
 
         if (!isPWA) {
             Debug.log('Not PWA');
@@ -146,20 +165,22 @@
                 Debug.log('Network error');
                 return;
             }
+
             const shellData = await shellRes.json();
             const gameData = await gameRes.json();
 
             remoteVersions.shell = shellData.version;
             remoteVersions.game = gameData.version;
 
+            Debug.log('Remote: shell=' + remoteVersions.shell + ', game=' + remoteVersions.game);
+
             const storedShell = localStorage.getItem('shell_version') || CONFIG.SHELL_VERSION;
             const storedGame = localStorage.getItem('game_version') || CONFIG.GAME_VERSION_DEFAULT;
 
+            Debug.log('Stored: shell=' + storedShell + ', game=' + storedGame);
+
             const shellUpdate = compareVersions(remoteVersions.shell, storedShell) > 0;
             const gameUpdate = compareVersions(remoteVersions.game, storedGame) > 0;
-
-            Debug.log('Stored: ' + storedShell + '/' + storedGame);
-            Debug.log('Remote: ' + remoteVersions.shell + '/' + remoteVersions.game);
 
             updateVersionDisplay(storedShell, storedGame);
 
@@ -173,8 +194,7 @@
 
         } catch (e) {
             Debug.log('Check failed: ' + e.message);
-        }
-    }
+        }    }
 
     async function performUpdate() {
         Debug.log('Update started');
@@ -194,7 +214,8 @@
         actions.style.display = 'none';
 
         const filesToCache = [
-            CONFIG.REPO_PATH + 's-index.html',            CONFIG.REPO_PATH + 's-styles.css',
+            CONFIG.REPO_PATH + 's-index.html',
+            CONFIG.REPO_PATH + 's-styles.css',
             CONFIG.REPO_PATH + 's-app.js',
             CONFIG.REPO_PATH + 'g-game.js',
             CONFIG.REPO_PATH + 'g-styles.css',
@@ -222,8 +243,7 @@
             }
         }
 
-        const elapsed = Date.now() - startTime;
-        if (elapsed < minDuration) {
+        const elapsed = Date.now() - startTime;        if (elapsed < minDuration) {
             await new Promise(resolve => setTimeout(resolve, minDuration - elapsed));
         }
 
@@ -243,7 +263,8 @@
         setTimeout(() => location.reload(), 500);
     }
 
-    function declineUpdate() {        document.getElementById('update-modal').classList.remove('modal--visible');
+    function declineUpdate() {
+        document.getElementById('update-modal').classList.remove('modal--visible');
         Debug.log('Update declined');
     }
 
@@ -271,8 +292,7 @@
     }
 
     function exitGame() {
-        history.back();
-        Debug.log('Exit game');
+        history.back();        Debug.log('Exit game');
     }
 
     function handleExit() {
@@ -292,7 +312,13 @@
     });
 
     function registerSW() {
-        if ('serviceWorker' in navigator) {            navigator.serviceWorker.register(CONFIG.REPO_PATH + 's-sw.js', { scope: CONFIG.REPO_PATH })
+        if (!isPWA) {
+            Debug.log('SW: not PWA, skip registration');
+            return;
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register(CONFIG.REPO_PATH + 's-sw.js', { scope: CONFIG.REPO_PATH })
                 .then(reg => {
                     swRegistration = reg;
                     Debug.log('SW registered');
@@ -315,8 +341,7 @@
                 switch (btn.dataset.action) {
                     case 'play': startGame(); break;
                     case 'update': performUpdate(); break;
-                    case 'exit': handleExit(); break;
-                }
+                    case 'exit': handleExit(); break;                }
             });
         } else {
             Debug.log('ERROR: shell-screen not found', 'error');
@@ -342,6 +367,7 @@
             updateModal.addEventListener('click', function(e) {
                 const btn = e.target.closest('[data-action]');
                 if (!btn) return;
+
                 if (btn.dataset.action === 'confirm-update') performUpdate();
                 else if (btn.dataset.action === 'decline-update') declineUpdate();
             });
@@ -350,7 +376,6 @@
 
     async function init() {
         Debug.init();
-        Debug.log('=== SHELL v' + CONFIG.SHELL_VERSION + ' ===');
         
         checkPWA();
         
@@ -358,14 +383,14 @@
         const storedGame = localStorage.getItem('game_version') || CONFIG.GAME_VERSION_DEFAULT;
         updateVersionDisplay(storedShell, storedGame);
         
+        initDebugToggle();
         registerSW();
         initEventListeners();
         await checkForUpdates();
 
         const params = new URLSearchParams(window.location.search);
         if (params.get('game') === 'cards' && window.Game) {
-            window.Game.start();
-            showGame();
+            window.Game.start();            showGame();
         }
     }
 
