@@ -1,7 +1,7 @@
-const CACHE_VERSION = 'v2.4.3';
-const CACHE_NAME = 'shell-cache-' + CACHE_VERSION;
+var CACHE_VERSION = 'v2.4.4';
+var CACHE_NAME = 'shell-cache-' + CACHE_VERSION;
 
-const ASSETS = [
+var ASSETS = [
     '/scards/s-index.html',
     '/scards/s-styles.css',
     '/scards/s-app.js',
@@ -38,10 +38,12 @@ self.addEventListener('activate', function(e) {
                 names.filter(function(n) {
                     return n !== CACHE_NAME;
                 }).map(function(n) {
+                    console.log('Deleting old cache:', n);
                     return caches.delete(n);
                 })
             );
         }).then(function() {
+            console.log('SW activated, claiming clients');
             return self.clients.claim();
         })
     );
