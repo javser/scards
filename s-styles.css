@@ -66,9 +66,7 @@ body.debug-active .screen {
     gap: 2px;
     text-align: right;
     padding: 5px 8px;
-    border-radius: 0;
     cursor: default;
-    pointer-events: auto;
 }
 
 .version-item {
@@ -81,7 +79,6 @@ body.debug-active .screen {
 .version-label {
     color: var(--color-muted);
     font-size: var(--size-font-version);
-    font-weight: 400;
 }
 
 .version-value {
@@ -96,10 +93,10 @@ body.debug-active .screen {
     align-items: center;
     gap: var(--spacing-xs);
 }
+
 .btn {
     background: var(--color-accent);
-    color: var(--color-text-primary);
-    border: none;
+    color: var(--color-text-primary);    border: none;
     padding: var(--spacing-md) var(--spacing-lg);
     font-size: var(--size-font-button);
     margin: var(--spacing-xs);
@@ -145,10 +142,10 @@ body.debug-active .screen {
 .modal__title { color: var(--color-success); font-size: 2rem; margin-bottom: var(--spacing-md); text-align: center; }
 
 .modal-actions {
-    display: flex;    gap: var(--spacing-sm);
+    display: flex;
+    gap: var(--spacing-sm);
     flex-wrap: wrap;
-    justify-content: center;
-}
+    justify-content: center;}
 
 .update-progress {
     display: none;
@@ -194,10 +191,10 @@ body.debug-active .screen {
     top: 0;
     left: 0;
     width: 100%;
-    z-index: 1000;}
+    z-index: 1000;
+}
 
 .close-screen.visible { display: flex; }
-
 .debug-panel {
     position: fixed;
     bottom: 0;
@@ -243,5 +240,6 @@ body.debug-active .debug-panel {
     }
 }
 
-@media (prefers-reduced-motion: reduce) {    .btn, .progress-bar { transition: none; }
-                                        }
+@media (prefers-reduced-motion: reduce) {
+    .btn, .progress-bar { transition: none; }
+}
