@@ -10,24 +10,24 @@
     <base href="/scards/">
     <link rel="manifest" href="./s-manifest.json">
     <link rel="apple-touch-icon" href="./icons/icon-192.png">
-    <title>Карточки v2.4.0</title>
+    <title>Карточки v2.4.3</title>
     <script>
         (function() {
             var isPWA = window.matchMedia('(display-mode: standalone)').matches ||
                         window.navigator.standalone === true;
             
-            var param = isPWA ? 'v=2.4.0' : 't=' + Date.now();
+            var param = isPWA ? 'v=2.4.3' : 't=' + Date.now();
             
             function loadAsset(href, type) {
                 return new Promise(function(resolve, reject) {
                     var el = document.createElement(type === 'css' ? 'link' : 'script');
                     if (type === 'css') {
                         el.rel = 'stylesheet';
-                        el.href = href + (href.includes('?') ? '&' : '?') + param;
+                        el.href = href + (href.includes('?') ? '&' : '?') + param + '&r=' + Math.random();
                         el.onload = resolve;
                         el.onerror = reject;
                     } else {
-                        el.src = href + (href.includes('?') ? '&' : '?') + param;
+                        el.src = href + (href.includes('?') ? '&' : '?') + param + '&r=' + Math.random();
                         el.onload = resolve;
                         el.onerror = reject;
                     }
