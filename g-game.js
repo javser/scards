@@ -1,13 +1,11 @@
 (function() {
     'use strict';
 
-    const GameConfig = window.GameConfig || {};
-
     const Game = {
         config: {
             id: 'cards',
             name: 'Карточки',
-            version: '1.0.3'
+            version: '1.0.5'
         },
 
         cards: [],
@@ -18,11 +16,12 @@
         gameStarted: false,
         gameWon: false,
 
-        init() {
+        init: function() {
             console.log('[Game] Карточки v' + this.config.version);
         },
 
-        start() {
+        start: function() {
+            var self = this;
             this.cards = [];
             this.flippedCards = [];
             this.matchedPairs = 0;
@@ -30,7 +29,7 @@
             this.gameStarted = true;
             this.gameWon = false;
 
-            const container = document.getElementById('game-container');
+            var container = document.getElementById('game-container');
             if (!container) {
                 console.error('[Game] Container not found');
                 return;
@@ -38,33 +37,48 @@
 
             container.innerHTML = '';
 
-            const emojis = ['🍎', '🍊', '🍇', '🍓', '🍒', '🍑', '🍍', '🥝'];
-            const deck = [...emojis, ...emojis];
+            var emojis = ['🍎', '🍊', '🍇', '🍓', '🍒', '🍑', '🍍', '🥝'];
+            var deck = emojis.concat(emojis);
 
-            for (let i = deck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [deck[i], deck[j]] = [deck[j], deck[i]];
+            for (var i = deck.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var temp = deck[i];
+                deck[i] = deck[j];
+                deck[j] = temp;
             }
 
             this.totalPairs = emojis.length;
-            const grid = document.createElement('div');
+            var grid = document.createElement('div');
             grid.className = 'cards-grid';
+            grid.style.display = 'grid';
+            grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+            grid.style.gap = '10px';
+            grid.style.width = '100%';
+            grid.style.maxWidth = '400px';
+            grid.style.padding = '20px';
+            grid.style.margin = '0 auto';
 
-            deck.forEach((emoji, index) => {
-                const card = this.createCard(emoji, index);
+            for (var k = 0; k < deck.length; k++) {
+                var card = this.createCard(deck[k], k);
                 this.cards.push(card);
                 grid.appendChild(card.element);
-            });
+            }
 
             container.appendChild(grid);
 
-            if (window.Shell?.debug) {
+            var victoryModal = document.getElementById('victory-modal');
+            if (victoryModal) {
+                victoryModal.classList.remove('modal--visible');
+            }
+
+            if (window.Shell && window.Shell.debug) {
                 window.Shell.debug.log('Game started: ' + this.totalPairs + ' pairs');
             }
         },
 
-        createCard(emoji, index) {
-            const card = {
+        createCard: function(emoji, index) {
+            var self = this;
+            var card = {
                 emoji: emoji,
                 index: index,
                 flipped: false,
@@ -72,55 +86,104 @@
                 element: null
             };
 
-            const el = document.createElement('div');
+            var el = document.createElement('div');
             el.className = 'card';
-            el.dataset.index = index;
+            el.style.width = '70px';
+            el.style.height = '70px';
+            el.style.perspective = '1000px';
+            el.style.cursor = 'pointer';
+            el.style.position = 'relative';
 
-            el.innerHTML = `
-                <div class="card-inner">
-                    <div class="card-front"></div>
-                    <div class="card-back">${emoji}</div>
-                </div>
-            `;
+            var inner = document.createElement('div');
+            inner.className = 'card-inner';
+            inner.style.position = 'relative';            inner.style.width = '100%';
+            inner.style.height = '100%';
+            inner.style.transition = 'transform 0.6s';
+            inner.style.transformStyle = 'preserve-3d';
 
-            el.addEventListener('click', () => this.onCardClick(card));
+            var front = document.createElement('div');
+            front.className = 'card-front';
+            front.style.position = 'absolute';
+            front.style.width = '100%';
+            front.style.height = '100%';
+            front.style.backfaceVisibility = 'hidden';
+            front.style.borderRadius = '8px';
+            front.style.display = 'flex';
+            front.style.alignItems = 'center';
+            front.style.justifyContent = 'center';
+            front.style.fontSize = '2rem';
+            front.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.3)';
+            front.style.background = 'linear-gradient(135deg, #34495e, #2c3e50)';
+            front.style.border = '2px solid #3498db';
+
+            var back = document.createElement('div');
+            back.className = 'card-back';
+            back.style.position = 'absolute';
+            back.style.width = '100%';
+            back.style.height = '100%';
+            back.style.backfaceVisibility = 'hidden';
+            back.style.borderRadius = '8px';
+            back.style.display = 'flex';
+            back.style.alignItems = 'center';
+            back.style.justifyContent = 'center';
+            back.style.fontSize = '2rem';
+            back.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.3)';
+            back.style.background = 'linear-gradient(135deg, #ecf0f1, #bdc3c7)';
+            back.style.transform = 'rotateY(180deg)';
+            back.style.border = '2px solid #2ecc71';
+            back.textContent = emoji;
+
+            inner.appendChild(front);
+            inner.appendChild(back);
+            el.appendChild(inner);
+
+            el.addEventListener('click', function(e) {
+                e.stopPropagation();
+                self.onCardClick(card);
+            });
 
             card.element = el;
             return card;
         },
-
-        onCardClick(card) {
+        onCardClick: function(card) {
             if (!this.gameStarted || this.gameWon) return;
             if (card.flipped || card.matched) return;
             if (this.flippedCards.length >= 2) return;
 
             this.flipCard(card);
             this.flippedCards.push(card);
+
             if (this.flippedCards.length === 2) {
                 this.moves++;
-                setTimeout(() => this.checkMatch(), 600);
+                setTimeout(function() { self.checkMatch(); }, 600);
             }
         },
 
-        flipCard(card) {
+        flipCard: function(card) {
             card.flipped = true;
-            card.element.classList.add('flipped');
+            card.element.querySelector('.card-inner').style.transform = 'rotateY(180deg)';
         },
 
-        unflipCard(card) {
+        unflipCard: function(card) {
             card.flipped = false;
-            card.element.classList.remove('flipped');
+            card.element.querySelector('.card-inner').style.transform = 'rotateY(0deg)';
         },
 
-        checkMatch() {
-            const [card1, card2] = this.flippedCards;
+        checkMatch: function() {
+            var self = this;
+            if (this.flippedCards.length !== 2) return;
+
+            var card1 = this.flippedCards[0];
+            var card2 = this.flippedCards[1];
 
             if (card1.emoji === card2.emoji) {
                 card1.matched = true;
                 card2.matched = true;
+                card1.element.querySelector('.card-back').style.background = 'linear-gradient(135deg, #2ecc71, #27ae60)';
+                card2.element.querySelector('.card-back').style.background = 'linear-gradient(135deg, #2ecc71, #27ae60)';
                 this.matchedPairs++;
 
-                if (window.Shell?.debug) {
+                if (window.Shell && window.Shell.debug) {
                     window.Shell.debug.log('Match! ' + this.matchedPairs + '/' + this.totalPairs);
                 }
 
@@ -132,49 +195,59 @@
                 this.unflipCard(card1);
                 this.unflipCard(card2);
             }
-
             this.flippedCards = [];
         },
 
-        onGameWon() {
-            if (window.Shell?.debug) {
+        onGameWon: function() {
+            var self = this;
+            if (window.Shell && window.Shell.debug) {
                 window.Shell.debug.log('Game Won! Moves: ' + this.moves);
             }
 
             this.showVictoryAnimation();
 
-            setTimeout(() => {
-                const modal = document.getElementById('victory-modal');
-                if (modal) {                    modal.classList.add('modal--visible');
-                    document.getElementById('victory-moves').textContent = this.moves;
+            setTimeout(function() {
+                var modal = document.getElementById('victory-modal');
+                if (modal) {
+                    modal.classList.add('modal--visible');
+                    var movesEl = document.getElementById('victory-moves');
+                    if (movesEl) {
+                        movesEl.textContent = self.moves;
+                    }
                 }
-            }, 1500);
+            }, 1000);
         },
 
-        showVictoryAnimation() {
-            const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#1abc9c'];
-            const particleCount = 150;
-            const duration = 3000;
+        showVictoryAnimation: function() {
+            var colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#1abc9c'];
+            var particleCount = 100;
 
-            for (let i = 0; i < particleCount; i++) {
-                this.createConfetti(colors, duration);
+            for (var i = 0; i < particleCount; i++) {
+                this.createConfetti(colors);
             }
 
-            setTimeout(() => {
-                const confetti = document.querySelectorAll('.confetti');
-                confetti.forEach(c => c.remove());
-            }, duration + 500);
+            setTimeout(function() {
+                var confetti = document.querySelectorAll('.confetti');
+                for (var j = 0; j < confetti.length; j++) {
+                    confetti[j].remove();
+                }
+            }, 3500);
         },
 
-        createConfetti(colors, duration) {
-            const confetti = document.createElement('div');
+        createConfetti: function(colors) {
+            var confetti = document.createElement('div');
             confetti.className = 'confetti';
-
-            const startLeft = Math.random() * 100;
-            const rotation = Math.random() * 360;
-            const size = Math.random() * 10 + 5;
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            const delay = Math.random() * 500;
+            confetti.style.pointerEvents = 'none';
+            confetti.style.position = 'fixed';
+            confetti.style.top = '-10px';
+            confetti.style.zIndex = '9999';
+            confetti.style.borderRadius = '2px';
+            confetti.style.animation = 'fall linear forwards';
+            var startLeft = Math.random() * 100;
+            var rotation = Math.random() * 360;
+            var size = Math.random() * 10 + 5;
+            var color = colors[Math.floor(Math.random() * colors.length)];
+            var delay = Math.random() * 500;
 
             confetti.style.left = startLeft + '%';
             confetti.style.width = size + 'px';
@@ -182,33 +255,32 @@
             confetti.style.backgroundColor = color;
             confetti.style.setProperty('--rotation', rotation + 'deg');
             confetti.style.animationDelay = delay + 'ms';
-            confetti.style.animationDuration = (Math.random() * 1000 + 2000) + 'ms';
 
             document.body.appendChild(confetti);
-
-            setTimeout(() => {
-                confetti.remove();
-            }, duration);
         },
 
-        exit() {
+        exit: function() {
             this.gameStarted = false;
-            const container = document.getElementById('game-container');
-            if (container) {                container.innerHTML = '';
+            this.gameWon = false;
+            var container = document.getElementById('game-container');
+            if (container) {
+                container.innerHTML = '';
             }
-            const modal = document.getElementById('victory-modal');
+            var modal = document.getElementById('victory-modal');
             if (modal) {
                 modal.classList.remove('modal--visible');
             }
-            const confetti = document.querySelectorAll('.confetti');
-            confetti.forEach(c => c.remove());
+            var confetti = document.querySelectorAll('.confetti');
+            for (var i = 0; i < confetti.length; i++) {
+                confetti[i].remove();
+            }
         }
     };
 
     window.Game = Game;
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => Game.init());
+        document.addEventListener('DOMContentLoaded', function() { Game.init(); });
     } else {
         Game.init();
     }
