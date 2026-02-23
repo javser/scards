@@ -5,7 +5,7 @@
         config: {
             id: 'cards',
             name: 'Карточки',
-            version: '1.0.6'
+            version: '1.0.8'
         },
 
         cards: [],
@@ -15,6 +15,7 @@
         moves: 0,
         gameStarted: false,
         gameWon: false,
+        isProcessing: false,
 
         init: function() {
             console.log('[Game] Карточки v' + this.config.version);
@@ -28,6 +29,7 @@
             this.moves = 0;
             this.gameStarted = true;
             this.gameWon = false;
+            this.isProcessing = false;
 
             var container = document.getElementById('game-container');
             if (!container) {
@@ -46,8 +48,8 @@
                 deck[i] = deck[j];
                 deck[j] = temp;
             }
-
             this.totalPairs = emojis.length;
+
             var grid = document.createElement('div');
             grid.className = 'cards-grid';
 
@@ -81,6 +83,7 @@
 
             var el = document.createElement('div');
             el.className = 'card';
+            el.dataset.index = index;
 
             var inner = document.createElement('div');
             inner.className = 'card-inner';
@@ -93,10 +96,12 @@
             back.textContent = emoji;
 
             inner.appendChild(front);
-            inner.appendChild(back);
-            el.appendChild(inner);
+            inner.appendChild(back);            el.appendChild(inner);
 
-            el.addEventListener('click', function(e) {                e.stopPropagation();
+            el.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[Game] Card click:', index, emoji);
                 self.onCardClick(card);
             });
 
@@ -105,37 +110,69 @@
         },
 
         onCardClick: function(card) {
-            if (!this.gameStarted || this.gameWon) return;
-            if (card.flipped || card.matched) return;
-            if (this.flippedCards.length >= 2) return;
+            console.log('[Game] onCardClick:', card.index, 'flipped:', card.flipped, 'matched:', card.matched);
+            console.log('[Game] isProcessing:', this.isProcessing, 'flippedCards:', this.flippedCards.length);
+
+            if (!this.gameStarted || this.gameWon) {
+                console.log('[Game] Blocked: game not active');
+                return;
+            }
+            if (card.flipped || card.matched) {
+                console.log('[Game] Blocked: card already flipped/matched');
+                return;
+            }
+            if (this.isProcessing) {
+                console.log('[Game] Blocked: processing');
+                return;
+            }
+            if (this.flippedCards.length >= 2) {
+                console.log('[Game] Blocked: 2 cards already flipped');
+                return;
+            }
 
             this.flipCard(card);
             this.flippedCards.push(card);
 
+            console.log('[Game] Flipped cards:', this.flippedCards.length);
+
             if (this.flippedCards.length === 2) {
                 this.moves++;
-                setTimeout(function() { self.checkMatch(); }, 600);
+                this.isProcessing = true;
+                console.log('[Game] Checking match in 600ms...');
+                var self = this;
+                setTimeout(function() {
+                    self.checkMatch();
+                }, 600);
             }
         },
-
         flipCard: function(card) {
             card.flipped = true;
             card.element.classList.add('flipped');
+            console.log('[Game] Card flipped:', card.index);
         },
 
         unflipCard: function(card) {
             card.flipped = false;
             card.element.classList.remove('flipped');
+            console.log('[Game] Card unflipped:', card.index);
         },
 
         checkMatch: function() {
-            var self = this;
-            if (this.flippedCards.length !== 2) return;
+            console.log('[Game] checkMatch called, flippedCards:', this.flippedCards.length);
+
+            if (this.flippedCards.length !== 2) {
+                console.log('[Game] Error: not 2 cards');
+                this.isProcessing = false;
+                return;
+            }
 
             var card1 = this.flippedCards[0];
             var card2 = this.flippedCards[1];
 
+            console.log('[Game] Comparing:', card1.emoji, 'vs', card2.emoji);
+
             if (card1.emoji === card2.emoji) {
+                console.log('[Game] MATCH!');
                 card1.matched = true;
                 card2.matched = true;
                 card1.element.classList.add('matched');
@@ -145,16 +182,19 @@
                 if (window.Shell && window.Shell.debug) {
                     window.Shell.debug.log('Match! ' + this.matchedPairs + '/' + this.totalPairs);
                 }
+
                 if (this.matchedPairs === this.totalPairs) {
                     this.gameWon = true;
                     this.onGameWon();
                 }
             } else {
+                console.log('[Game] NO MATCH');
                 this.unflipCard(card1);
                 this.unflipCard(card2);
             }
 
             this.flippedCards = [];
+            this.isProcessing = false;            console.log('[Game] Processing complete');
         },
 
         onGameWon: function() {
@@ -194,7 +234,8 @@
         },
 
         createConfetti: function(colors) {
-            var confetti = document.createElement('div');            confetti.className = 'confetti';
+            var confetti = document.createElement('div');
+            confetti.className = 'confetti';
             confetti.style.pointerEvents = 'none';
 
             var startLeft = Math.random() * 100;
@@ -202,7 +243,6 @@
             var size = Math.random() * 10 + 5;
             var color = colors[Math.floor(Math.random() * colors.length)];
             var delay = Math.random() * 500;
-
             confetti.style.left = startLeft + '%';
             confetti.style.width = size + 'px';
             confetti.style.height = size + 'px';
@@ -216,6 +256,7 @@
         exit: function() {
             this.gameStarted = false;
             this.gameWon = false;
+            this.isProcessing = false;
             var container = document.getElementById('game-container');
             if (container) {
                 container.innerHTML = '';
