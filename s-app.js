@@ -2,7 +2,7 @@
     'use strict';
 
     const CONFIG = {
-        SHELL_VERSION: '2.3.2',
+        SHELL_VERSION: '2.3.4',
         GAME_VERSION_DEFAULT: '1.0.2',
         REPO_PATH: '/scards/',
         DEBUG_MAX_LINES: 8
@@ -125,7 +125,7 @@
             return;
         }
 
-        Debug.log('Debug toggle: initialized');
+        Debug.log('Debug toggle: initialized on .versions');
 
         versionsEl.addEventListener('click', function(e) {
             e.preventDefault();
@@ -140,7 +140,7 @@
             } else {
                 const interval = now - tapTimer;
 
-                if (interval > 250) {
+                if (interval > 400) {
                     tapCount = 1;
                     tapTimer = now;
                     Debug.log('Tap: 1 (reset, interval=' + interval + 'ms)');
@@ -157,6 +157,8 @@
                 Debug.toggle();
             }
         });
+
+        Debug.log('Debug toggle: click listener attached');
     }
 
     function compareVersions(v1, v2) {
@@ -192,9 +194,9 @@
             remoteVersions.game = gameData.version;
 
             Debug.log('Remote: shell=' + remoteVersions.shell + ', game=' + remoteVersions.game);
-
             const storedShell = localStorage.getItem('shell_version') || CONFIG.SHELL_VERSION;
             const storedGame = localStorage.getItem('game_version') || CONFIG.GAME_VERSION_DEFAULT;
+
             Debug.log('Stored: shell=' + storedShell + ', game=' + storedGame);
 
             const shellUpdate = compareVersions(remoteVersions.shell, storedShell) > 0;
@@ -241,9 +243,9 @@
             CONFIG.REPO_PATH + 'g-config.js',
             CONFIG.REPO_PATH + 's-version.json',
             CONFIG.REPO_PATH + 'g-version.json',
-            CONFIG.REPO_PATH + 's-manifest.json',
-            CONFIG.REPO_PATH + 's-sw.js'
+            CONFIG.REPO_PATH + 's-manifest.json',            CONFIG.REPO_PATH + 's-sw.js'
         ];
+
         const startTime = Date.now();
         const minDuration = 1000;
 
@@ -290,9 +292,9 @@
     function showShell() {
         document.getElementById('game-screen').classList.remove('screen--active');
         document.getElementById('shell-screen').classList.add('screen--active');
-        document.getElementById('close-screen').classList.remove('visible');
-        Debug.log('Show shell');
+        document.getElementById('close-screen').classList.remove('visible');        Debug.log('Show shell');
     }
+
     function showGame() {
         document.getElementById('shell-screen').classList.remove('screen--active');
         document.getElementById('game-screen').classList.add('screen--active');
@@ -339,9 +341,9 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register(CONFIG.REPO_PATH + 's-sw.js', { scope: CONFIG.REPO_PATH })
                 .then(reg => {
-                    swRegistration = reg;
-                    Debug.log('SW registered');
-                })                .catch(err => Debug.log('SW error: ' + err.message));
+                    swRegistration = reg;                    Debug.log('SW registered');
+                })
+                .catch(err => Debug.log('SW error: ' + err.message));
         }
     }
 
@@ -388,9 +390,9 @@
                 if (!btn) return;
 
                 if (btn.dataset.action === 'confirm-update') performUpdate();
-                else if (btn.dataset.action === 'decline-update') declineUpdate();
-            });
-        }    }
+                else if (btn.dataset.action === 'decline-update') declineUpdate();            });
+        }
+    }
 
     async function init() {
         Debug.init();
