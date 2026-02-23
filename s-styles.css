@@ -29,7 +29,6 @@ body {
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     line-height: 1.5;
-    position: relative;
 }
 
 .screen {
@@ -37,7 +36,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
@@ -96,8 +95,8 @@ body.debug-active .screen {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--spacing-xs);}
-
+    gap: var(--spacing-xs);
+}
 .btn {
     background: var(--color-accent);
     color: var(--color-text-primary);
@@ -145,8 +144,8 @@ body.debug-active .screen {
 
 .modal--visible { display: flex; }
 .modal__title { color: var(--color-success); font-size: 2rem; margin-bottom: var(--spacing-md); text-align: center; }
-.modal-actions {
-    display: flex;
+
+.modal-actions {    display: flex;
     gap: var(--spacing-sm);
     flex-wrap: wrap;
     justify-content: center;
@@ -194,8 +193,8 @@ body.debug-active .screen {
     text-align: center;
     position: fixed;
     top: 0;
-    left: 0;    width: 100%;
-    z-index: 1000;
+    left: 0;
+    width: 100%;    z-index: 1000;
 }
 
 .close-screen.visible { display: flex; }
@@ -243,6 +242,6 @@ body.debug-active .debug-panel {
         --size-button-width: 160px;
     }
 }
-@media (prefers-reduced-motion: reduce) {
-    .btn, .progress-bar, .versions { transition: none; }
+
+@media (prefers-reduced-motion: reduce) {    .btn, .progress-bar, .versions { transition: none; }
 }
