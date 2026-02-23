@@ -2,7 +2,7 @@
     'use strict';
 
     const CONFIG = {
-        SHELL_VERSION: '2.3.10',
+        SHELL_VERSION: '2.3.11',
         GAME_VERSION_DEFAULT: '1.0.2',
         REPO_PATH: '/scards/',
         DEBUG_MAX_LINES: 8
@@ -14,6 +14,7 @@
     let remoteVersions = { shell: null, game: null };
     let tapCount = 0;
     let tapTimer = null;
+    let gameReady = false;
 
     const Debug = {
         panel: null,
@@ -46,8 +47,8 @@
                 document.body.classList.remove('debug-active');
             }
         },
-
-        toggle() {            debugEnabled = !debugEnabled;
+        toggle() {
+            debugEnabled = !debugEnabled;
             localStorage.setItem('debug_enabled', debugEnabled);
             this.updateVisibility();
             this.log('Debug: ' + (debugEnabled ? 'ON' : 'OFF'));
@@ -95,8 +96,8 @@
             updateButton.style.display = 'none';
             Debug.log('Web mode: buttons hidden');
         } else {
-            exitButtons.forEach(btn => btn.style.display = 'block');
-            Debug.log('PWA mode: exit buttons shown');        }
+            exitButtons.forEach(btn => btn.style.display = 'block');            Debug.log('PWA mode: exit buttons shown');
+        }
     }
 
     function updateVersionDisplay(shellVer, gameVer) {
@@ -144,8 +145,8 @@
                     tapCount = 1;
                     tapTimer = now;
                     Debug.log('Tap: 1 (reset, interval=' + interval + 'ms)');
-                } else {
-                    tapCount++;                    tapTimer = now;
+                } else {                    tapCount++;
+                    tapTimer = now;
                     Debug.log('Tap: ' + tapCount + ' (interval=' + interval + 'ms)');
                 }
             }
@@ -242,8 +243,8 @@
             CONFIG.REPO_PATH + 'g-styles.css',
             CONFIG.REPO_PATH + 'g-config.js',
             CONFIG.REPO_PATH + 's-version.json',
-            CONFIG.REPO_PATH + 'g-version.json',
-            CONFIG.REPO_PATH + 's-manifest.json',            CONFIG.REPO_PATH + 's-sw.js'
+            CONFIG.REPO_PATH + 'g-version.json',            CONFIG.REPO_PATH + 's-manifest.json',
+            CONFIG.REPO_PATH + 's-sw.js'
         ];
 
         const startTime = Date.now();
@@ -291,8 +292,8 @@
 
     function showShell() {
         document.getElementById('game-screen').classList.remove('screen--active');
-        document.getElementById('shell-screen').classList.add('screen--active');
-        document.getElementById('close-screen').classList.remove('visible');        Debug.log('Show shell');
+        document.getElementById('shell-screen').classList.add('screen--active');        document.getElementById('close-screen').classList.remove('visible');
+        Debug.log('Show shell');
     }
 
     function showGame() {
@@ -302,10 +303,16 @@
     }
 
     function startGame() {
+        if (!gameReady) {
+            Debug.log('Game loading...', 'warn');
+            return;
+        }
+
         if (window.Game && typeof window.Game.start === 'function') {
             window.Game.start();
             history.pushState({ screen: 'game' }, '', CONFIG.REPO_PATH + '?game=cards');
             showGame();
+            Debug.log('Game started');
         } else {
             Debug.log('Game not ready', 'error');
         }
@@ -334,14 +341,14 @@
 
     function registerSW() {
         if (!isPWA) {
-            Debug.log('SW: not PWA, skip registration');
-            return;
+            Debug.log('SW: not PWA, skip registration');            return;
         }
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register(CONFIG.REPO_PATH + 's-sw.js', { scope: CONFIG.REPO_PATH })
                 .then(reg => {
-                    swRegistration = reg;                    Debug.log('SW registered');
+                    swRegistration = reg;
+                    Debug.log('SW registered');
                 })
                 .catch(err => Debug.log('SW error: ' + err.message));
         }
@@ -383,15 +390,24 @@
             });
         }
 
-        const updateModal = document.getElementById('update-modal');
-        if (updateModal) {
+        const updateModal = document.getElementById('update-modal');        if (updateModal) {
             updateModal.addEventListener('click', function(e) {
                 const btn = e.target.closest('[data-action]');
                 if (!btn) return;
 
                 if (btn.dataset.action === 'confirm-update') performUpdate();
-                else if (btn.dataset.action === 'decline-update') declineUpdate();            });
+                else if (btn.dataset.action === 'decline-update') declineUpdate();
+            });
         }
+    }
+
+    function checkGameReady() {
+        if (window.Game && typeof window.Game.start === 'function') {
+            gameReady = true;
+            Debug.log('Game ready: ' + (window.Game.config?.version || 'unknown'));
+            return true;
+        }
+        return false;
     }
 
     async function init() {
@@ -406,10 +422,13 @@
         initDebugToggle();
         registerSW();
         initEventListeners();
+        
         await checkForUpdates();
+        
+        checkGameReady();
 
         const params = new URLSearchParams(window.location.search);
-        if (params.get('game') === 'cards' && window.Game) {
+        if (params.get('game') === 'cards' && gameReady) {
             window.Game.start();
             showGame();
         }
@@ -420,7 +439,6 @@
         navigateToShell: showShell,
         debug: Debug
     };
-
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
