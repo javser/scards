@@ -10,13 +10,13 @@
     <base href="/scards/">
     <link rel="manifest" href="./s-manifest.json">
     <link rel="apple-touch-icon" href="./icons/icon-192.png">
-    <title>Карточки v2.3.12</title>
+    <title>Карточки v2.4.0</title>
     <script>
         (function() {
             var isPWA = window.matchMedia('(display-mode: standalone)').matches ||
                         window.navigator.standalone === true;
             
-            var param = isPWA ? 'v=2.3.12' : 't=' + Date.now();
+            var param = isPWA ? 'v=2.4.0' : 't=' + Date.now();
             
             function loadAsset(href, type) {
                 return new Promise(function(resolve, reject) {
@@ -95,8 +95,19 @@
         </div>
     </div>
 
+    <div id="victory-modal" class="modal">
+        <h2 class="modal__title">🎉 Победа! 🎉</h2>        <div class="modal__stats">
+            <p>Ходов: <span id="victory-moves">0</span></p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn" data-action="play-again">Играть снова</button>
+            <button class="btn btn--exit" data-action="close-victory">В меню</button>
+        </div>
+    </div>
+
     <div id="close-screen" class="close-screen">
-        <h1>Приложение можно закрыть</h1>        <p>Используйте кнопку "Назад" на устройстве</p>
+        <h1>Приложение можно закрыть</h1>
+        <p>Используйте кнопку "Назад" на устройстве</p>
     </div>
 
     <div id="debug-panel" class="debug-panel">
