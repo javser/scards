@@ -4,12 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#2c3e50">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <base href="/scards/">
     <link rel="manifest" href="./s-manifest.json">
     <link rel="apple-touch-icon" href="./icons/icon-192.png">
-    <title>Карточки v2.3.8</title>
-    <link rel="stylesheet" href="./s-styles.css?v=2.3.8">
-    <link rel="stylesheet" href="./g-styles.css?v=1.0.2">
+    <title>Карточки v2.3.10</title>
+    <script>
+        (function() {
+            var isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+                        window.navigator.standalone === true;
+            
+            var param = isPWA ? 'v=2.3.10' : 't=' + Date.now();
+            
+            function addAsset(href, type) {
+                var el = document.createElement(type === 'css' ? 'link' : 'script');
+                if (type === 'css') {
+                    el.rel = 'stylesheet';
+                    el.href = href + (href.includes('?') ? '&' : '?') + param;
+                } else {
+                    el.src = href + (href.includes('?') ? '&' : '?') + param;
+                    el.defer = true;
+                }
+                document.head.appendChild(el);
+            }
+            
+            addAsset('./s-styles.css', 'css');
+            addAsset('./g-styles.css', 'css');
+            addAsset('./s-app.js', 'js');
+            addAsset('./g-config.js', 'js');
+            addAsset('./g-game.js', 'js');
+        })();
+    </script>
 </head>
 <body>
     <section id="shell-screen" class="screen screen--active">
@@ -63,9 +90,5 @@
     <div id="debug-panel" class="debug-panel">
         <div class="debug-panel-content"></div>
     </div>
-
-    <script src="./s-app.js?v=2.3.8" defer></script>
-    <script src="./g-config.js?v=1.0.2" defer></script>
-    <script src="./g-game.js?v=1.0.2" defer></script>
 </body>
 </html>
