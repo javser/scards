@@ -10,13 +10,13 @@
     <base href="/scards/">
     <link rel="manifest" href="./s-manifest.json">
     <link rel="apple-touch-icon" href="./icons/icon-192.png">
-    <title>Карточки v2.3.11</title>
+    <title>Карточки v2.3.12</title>
     <script>
         (function() {
             var isPWA = window.matchMedia('(display-mode: standalone)').matches ||
                         window.navigator.standalone === true;
             
-            var param = isPWA ? 'v=2.3.11' : 't=' + Date.now();
+            var param = isPWA ? 'v=2.3.12' : 't=' + Date.now();
             
             function loadAsset(href, type) {
                 return new Promise(function(resolve, reject) {
@@ -37,17 +37,20 @@
             
             Promise.all([
                 loadAsset('./s-styles.css', 'css'),
-                loadAsset('./g-styles.css', 'css'),
-                loadAsset('./g-config.js', 'js'),
-                loadAsset('./g-game.js', 'js'),
-                loadAsset('./s-app.js', 'js')
+                loadAsset('./g-styles.css', 'css')
             ]).then(function() {
-                console.log('All assets loaded');
+                return loadAsset('./g-config.js', 'js');
+            }).then(function() {
+                return loadAsset('./g-game.js', 'js');
+            }).then(function() {
+                return loadAsset('./s-app.js', 'js');
+            }).then(function() {
+                console.log('All assets loaded in order');
             }).catch(function(err) {
-                console.error('Asset load failed:', err);
-            });
+                console.error('Asset load failed:', err);            });
         })();
-    </script></head>
+    </script>
+</head>
 <body>
     <section id="shell-screen" class="screen screen--active">
         <h1 class="heading">Карточки</h1>
@@ -93,9 +96,9 @@
     </div>
 
     <div id="close-screen" class="close-screen">
-        <h1>Приложение можно закрыть</h1>
-        <p>Используйте кнопку "Назад" на устройстве</p>
+        <h1>Приложение можно закрыть</h1>        <p>Используйте кнопку "Назад" на устройстве</p>
     </div>
+
     <div id="debug-panel" class="debug-panel">
         <div class="debug-panel-content"></div>
     </div>
