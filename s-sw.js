@@ -1,4 +1,4 @@
-var CACHE_VERSION = 'v2.4.5';
+var CACHE_VERSION = 'v2.4.7';
 var CACHE_NAME = 'shell-cache-' + CACHE_VERSION;
 
 var ASSETS = [
