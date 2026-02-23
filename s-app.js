@@ -2,7 +2,7 @@
     'use strict';
 
     const CONFIG = {
-        SHELL_VERSION: '2.2.10',
+        SHELL_VERSION: '2.2.11',
         GAME_VERSION_DEFAULT: '1.0.2',
         REPO_PATH: '/scards/',
         DEBUG_MODE: true,
@@ -56,7 +56,7 @@
             this.log('Debug initialized');
         },
 
-        log(type, message, level = 'log') {
+        log(type, message, level) {
             if (!this.enabled || !this.content) return;
 
             const time = new Date().toLocaleTimeString();
@@ -68,7 +68,9 @@
             }
 
             this.content.innerHTML = this.logs.map(l => {
-                const cls = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
+                let cls = 'log';
+                if (level === 'error') cls = 'error';
+                else if (level === 'warn') cls = 'warn';
                 return `<div class="debug-line debug-line--${cls}">${this.escapeHtml(l)}</div>`;
             }).join('');
 
@@ -94,9 +96,9 @@
         if (!isPWA) {
             exitButtons.forEach(btn => btn.style.display = 'none');
             updateButton.style.display = 'none';
-            Debug.log('Web mode: buttons hidden');
-        } else {
-            exitButtons.forEach(btn => btn.style.display = 'block');            Debug.log('PWA mode: exit buttons shown');
+            Debug.log('Web mode: buttons hidden');        } else {
+            exitButtons.forEach(btn => btn.style.display = 'block');
+            Debug.log('PWA mode: exit buttons shown');
         }
     }
 
@@ -104,18 +106,18 @@
         const shellEl = document.getElementById('shell-version');
         const gameEl = document.getElementById('game-version');
         
-        Debug.log('Update versions: shell=' + shellVer + ', game=' + gameVer);
+        Debug.log('Versions: shell=' + shellVer + ', game=' + gameVer);
 
         if (shellEl) {
             shellEl.textContent = 'v' + shellVer;
         } else {
-            Debug.log('ERROR: shell-version element not found', 'error');
+            Debug.log('ERROR: shell-version not found', 'error');
         }
 
         if (gameEl) {
             gameEl.textContent = 'v' + gameVer;
         } else {
-            Debug.log('ERROR: game-version element not found', 'error');
+            Debug.log('ERROR: game-version not found', 'error');
         }
     }
 
@@ -144,8 +146,8 @@
                 Debug.log('Network error');
                 return;
             }
-
-            const shellData = await shellRes.json();            const gameData = await gameRes.json();
+            const shellData = await shellRes.json();
+            const gameData = await gameRes.json();
 
             remoteVersions.shell = shellData.version;
             remoteVersions.game = gameData.version;
@@ -192,9 +194,9 @@
         actions.style.display = 'none';
 
         const filesToCache = [
-            CONFIG.REPO_PATH + 's-index.html',
-            CONFIG.REPO_PATH + 's-styles.css',
-            CONFIG.REPO_PATH + 's-app.js',            CONFIG.REPO_PATH + 'g-game.js',
+            CONFIG.REPO_PATH + 's-index.html',            CONFIG.REPO_PATH + 's-styles.css',
+            CONFIG.REPO_PATH + 's-app.js',
+            CONFIG.REPO_PATH + 'g-game.js',
             CONFIG.REPO_PATH + 'g-styles.css',
             CONFIG.REPO_PATH + 'g-config.js',
             CONFIG.REPO_PATH + 's-version.json',
@@ -241,9 +243,9 @@
         setTimeout(() => location.reload(), 500);
     }
 
-    function declineUpdate() {
-        document.getElementById('update-modal').classList.remove('modal--visible');
-        Debug.log('Update declined');    }
+    function declineUpdate() {        document.getElementById('update-modal').classList.remove('modal--visible');
+        Debug.log('Update declined');
+    }
 
     function showShell() {
         document.getElementById('game-screen').classList.remove('screen--active');
@@ -290,9 +292,9 @@
     });
 
     function registerSW() {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register(CONFIG.REPO_PATH + 's-sw.js', { scope: CONFIG.REPO_PATH })
-                .then(reg => {                    swRegistration = reg;
+        if ('serviceWorker' in navigator) {            navigator.serviceWorker.register(CONFIG.REPO_PATH + 's-sw.js', { scope: CONFIG.REPO_PATH })
+                .then(reg => {
+                    swRegistration = reg;
                     Debug.log('SW registered');
                 })
                 .catch(err => Debug.log('SW error: ' + err.message));
@@ -340,8 +342,8 @@
             updateModal.addEventListener('click', function(e) {
                 const btn = e.target.closest('[data-action]');
                 if (!btn) return;
-
-                if (btn.dataset.action === 'confirm-update') performUpdate();                else if (btn.dataset.action === 'decline-update') declineUpdate();
+                if (btn.dataset.action === 'confirm-update') performUpdate();
+                else if (btn.dataset.action === 'decline-update') declineUpdate();
             });
         }
     }
