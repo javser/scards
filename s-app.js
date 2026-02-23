@@ -2,7 +2,7 @@
     'use strict';
 
     const CONFIG = {
-        SHELL_VERSION: '2.2.9',
+        SHELL_VERSION: '2.2.10',
         GAME_VERSION_DEFAULT: '1.0.2',
         REPO_PATH: '/scards/',
         DEBUG_MODE: true,
@@ -348,7 +348,7 @@
 
     async function init() {
         Debug.init();
-        Debug.log('App start v' + CONFIG.SHELL_VERSION);
+        Debug.log('=== SHELL v' + CONFIG.SHELL_VERSION + ' ===');
         
         checkPWA();
         
