@@ -2,7 +2,7 @@
     'use strict';
 
     const CONFIG = {
-        SHELL_VERSION: '2.3.0',
+        SHELL_VERSION: '2.3.1',
         GAME_VERSION_DEFAULT: '1.0.2',
         REPO_PATH: '/scards/',
         DEBUG_MAX_LINES: 8
@@ -125,16 +125,27 @@
             e.stopPropagation();
 
             const now = Date.now();
+            tapCount++;
 
-            if (tapTimer && now - tapTimer > 250) {
-                tapCount = 0;
+            if (tapTimer === null) {
+                tapCount = 1;
+                tapTimer = now;
+                Debug.log('Tap: 1 (start)');
+            } else {
+                const interval = now - tapTimer;
+                
+                if (interval > 250) {
+                    tapCount = 1;
+                    tapTimer = now;
+                    Debug.log('Tap: 1 (reset, interval=' + interval + 'ms)');
+                } else {
+                    tapTimer = now;
+                    Debug.log('Tap: ' + tapCount + ' (interval=' + interval + 'ms)');
+                }
             }
 
-            tapCount++;
-            tapTimer = now;
-
             if (tapCount === 4) {
-                tapCount = 0;
+                Debug.log('Tap: 4 - TOGGLE DEBUG');                tapCount = 0;
                 tapTimer = null;
                 Debug.toggle();
             }
@@ -145,7 +156,8 @@
         return v1.localeCompare(v2, undefined, { numeric: true });
     }
 
-    async function checkForUpdates() {        Debug.log('Check updates...');
+    async function checkForUpdates() {
+        Debug.log('Check updates...');
 
         if (!isPWA) {
             Debug.log('Not PWA');
@@ -183,7 +195,6 @@
             const gameUpdate = compareVersions(remoteVersions.game, storedGame) > 0;
 
             updateVersionDisplay(storedShell, storedGame);
-
             if (shellUpdate || gameUpdate) {
                 document.querySelector('.btn--update').classList.add('visible');
                 Debug.log('Update available!');
@@ -194,7 +205,8 @@
 
         } catch (e) {
             Debug.log('Check failed: ' + e.message);
-        }    }
+        }
+    }
 
     async function performUpdate() {
         Debug.log('Update started');
@@ -231,8 +243,7 @@
 
         for (let i = 0; i < filesToCache.length; i++) {
             try {
-                await fetch(filesToCache[i] + '?t=' + Date.now(), { cache: 'reload' });
-                
+                await fetch(filesToCache[i] + '?t=' + Date.now(), { cache: 'reload' });                
                 const percent = Math.round(((i + 1) / filesToCache.length) * 100);
                 progressText.textContent = percent + '%';
                 progressBar.querySelector('.progress-bar').style.width = percent + '%';
@@ -243,7 +254,8 @@
             }
         }
 
-        const elapsed = Date.now() - startTime;        if (elapsed < minDuration) {
+        const elapsed = Date.now() - startTime;
+        if (elapsed < minDuration) {
             await new Promise(resolve => setTimeout(resolve, minDuration - elapsed));
         }
 
@@ -280,7 +292,6 @@
         document.getElementById('game-screen').classList.add('screen--active');
         Debug.log('Show game');
     }
-
     function startGame() {
         if (window.Game && typeof window.Game.start === 'function') {
             window.Game.start();
@@ -292,7 +303,8 @@
     }
 
     function exitGame() {
-        history.back();        Debug.log('Exit game');
+        history.back();
+        Debug.log('Exit game');
     }
 
     function handleExit() {
@@ -329,7 +341,6 @@
 
     function initEventListeners() {
         Debug.log('Init listeners');
-
         const shellScreen = document.getElementById('shell-screen');
         if (shellScreen) {
             shellScreen.addEventListener('click', function(e) {
@@ -341,7 +352,8 @@
                 switch (btn.dataset.action) {
                     case 'play': startGame(); break;
                     case 'update': performUpdate(); break;
-                    case 'exit': handleExit(); break;                }
+                    case 'exit': handleExit(); break;
+                }
             });
         } else {
             Debug.log('ERROR: shell-screen not found', 'error');
@@ -378,8 +390,7 @@
         Debug.init();
         
         checkPWA();
-        
-        const storedShell = localStorage.getItem('shell_version') || CONFIG.SHELL_VERSION;
+                const storedShell = localStorage.getItem('shell_version') || CONFIG.SHELL_VERSION;
         const storedGame = localStorage.getItem('game_version') || CONFIG.GAME_VERSION_DEFAULT;
         updateVersionDisplay(storedShell, storedGame);
         
@@ -390,7 +401,8 @@
 
         const params = new URLSearchParams(window.location.search);
         if (params.get('game') === 'cards' && window.Game) {
-            window.Game.start();            showGame();
+            window.Game.start();
+            showGame();
         }
     }
 
