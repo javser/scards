@@ -14,7 +14,7 @@
     --size-button-width: 200px;
     --size-font-heading: 2.5rem;
     --size-font-button: 1.2rem;
-    --size-font-version: 0.875rem;
+    --size-font-version: 0.75rem;
     --debug-panel-height: 160px;
 }
 
@@ -58,31 +58,30 @@ body.debug-active .screen {
 }
 
 .versions {
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-xs);
-    margin-bottom: var(--spacing-lg);
-    text-align: center;
-    cursor: pointer;
-    padding: var(--spacing-sm);
-    border-radius: 4px;
-    transition: background-color var(--timing-fast);
-}
-
-.versions:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    gap: 2px;
+    text-align: right;
+    padding: 5px 8px;
+    border-radius: 0;
+    cursor: default;
+    pointer-events: auto;
 }
 
 .version-item {
     display: flex;
-    gap: var(--spacing-sm);
-    justify-content: center;
+    gap: 5px;
+    justify-content: flex-end;
     align-items: center;
 }
 
 .version-label {
     color: var(--color-muted);
     font-size: var(--size-font-version);
+    font-weight: 400;
 }
 
 .version-value {
@@ -145,8 +144,8 @@ body.debug-active .screen {
 .modal--visible { display: flex; }
 .modal__title { color: var(--color-success); font-size: 2rem; margin-bottom: var(--spacing-md); text-align: center; }
 
-.modal-actions {    display: flex;
-    gap: var(--spacing-sm);
+.modal-actions {
+    display: flex;    gap: var(--spacing-sm);
     flex-wrap: wrap;
     justify-content: center;
 }
@@ -194,8 +193,8 @@ body.debug-active .screen {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;    z-index: 1000;
-}
+    width: 100%;
+    z-index: 1000;}
 
 .close-screen.visible { display: flex; }
 
@@ -240,8 +239,9 @@ body.debug-active .debug-panel {
         --size-font-heading: 2rem;
         --size-font-button: 1rem;
         --size-button-width: 160px;
+        --size-font-version: 0.7rem;
     }
 }
 
-@media (prefers-reduced-motion: reduce) {    .btn, .progress-bar, .versions { transition: none; }
-}
+@media (prefers-reduced-motion: reduce) {    .btn, .progress-bar { transition: none; }
+                                        }
