@@ -6,6 +6,8 @@
     max-width: 400px !important;
     padding: 20px !important;
     margin: 0 auto !important;
+    justify-items: center !important;
+    align-items: center !important;
 }
 
 .card {
@@ -22,10 +24,12 @@
     height: 100% !important;
     transition: transform 0.6s !important;
     transform-style: preserve-3d !important;
+    -webkit-transform-style: preserve-3d !important;
 }
 
 .card.flipped .card-inner {
     transform: rotateY(180deg) !important;
+    -webkit-transform: rotateY(180deg) !important;
 }
 
 .card-front,
@@ -43,13 +47,15 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
 }
 
-.card-front {
-    background: linear-gradient(135deg, #34495e, #2c3e50) !important;
+.card-front {    background: linear-gradient(135deg, #34495e, #2c3e50) !important;
     border: 2px solid #3498db !important;
+    transform: rotateY(0deg) !important;
 }
+
 .card-back {
     background: linear-gradient(135deg, #ecf0f1, #bdc3c7) !important;
     transform: rotateY(180deg) !important;
+    -webkit-transform: rotateY(180deg) !important;
     border: 2px solid #2ecc71 !important;
 }
 
@@ -90,13 +96,13 @@
     width: 100% !important;
     height: 100% !important;
     background: rgba(0, 0, 0, 0.85) !important;
-    display: none !important;
-    justify-content: center !important;
+    display: none !important;    justify-content: center !important;
     align-items: center !important;
     flex-direction: column !important;
     z-index: 1000 !important;
     pointer-events: none !important;
 }
+
 #victory-modal.modal--visible {
     display: flex !important;
     pointer-events: auto !important;
@@ -139,6 +145,5 @@
 
     .card-front,
     .card-back {
-        font-size: 1.5rem !important;
-    }
+        font-size: 1.5rem !important;    }
 }
