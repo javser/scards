@@ -2,14 +2,14 @@
     'use strict';
 
     const CONFIG = {
-        SHELL_VERSION: '2.3.1',
+        SHELL_VERSION: '2.3.2',
         GAME_VERSION_DEFAULT: '1.0.2',
         REPO_PATH: '/scards/',
         DEBUG_MAX_LINES: 8
     };
 
     let isPWA = false;
-    let debugEnabled = false;
+    let debugEnabled = true;
     let swRegistration = null;
     let remoteVersions = { shell: null, game: null };
     let tapCount = 0;
@@ -30,7 +30,9 @@
             }
 
             const saved = localStorage.getItem('debug_enabled');
-            debugEnabled = saved === 'true';
+            if (saved !== null) {
+                debugEnabled = saved === 'true';
+            }
 
             this.updateVisibility();
             this.log('=== SHELL v' + CONFIG.SHELL_VERSION + ' ===');
@@ -45,9 +47,9 @@
             }
         },
 
-        toggle() {
-            debugEnabled = !debugEnabled;
-            localStorage.setItem('debug_enabled', debugEnabled);            this.updateVisibility();
+        toggle() {            debugEnabled = !debugEnabled;
+            localStorage.setItem('debug_enabled', debugEnabled);
+            this.updateVisibility();
             this.log('Debug: ' + (debugEnabled ? 'ON' : 'OFF'));
         },
 
@@ -94,9 +96,9 @@
             Debug.log('Web mode: buttons hidden');
         } else {
             exitButtons.forEach(btn => btn.style.display = 'block');
-            Debug.log('PWA mode: exit buttons shown');
-        }
+            Debug.log('PWA mode: exit buttons shown');        }
     }
+
     function updateVersionDisplay(shellVer, gameVer) {
         const shellEl = document.getElementById('shell-version');
         const gameEl = document.getElementById('game-version');
@@ -118,14 +120,18 @@
 
     function initDebugToggle() {
         const versionsEl = document.querySelector('.versions');
-        if (!versionsEl) return;
+        if (!versionsEl) {
+            Debug.log('ERROR: .versions element not found', 'error');
+            return;
+        }
+
+        Debug.log('Debug toggle: initialized');
 
         versionsEl.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
 
             const now = Date.now();
-            tapCount++;
 
             if (tapTimer === null) {
                 tapCount = 1;
@@ -133,19 +139,20 @@
                 Debug.log('Tap: 1 (start)');
             } else {
                 const interval = now - tapTimer;
-                
+
                 if (interval > 250) {
                     tapCount = 1;
                     tapTimer = now;
                     Debug.log('Tap: 1 (reset, interval=' + interval + 'ms)');
                 } else {
-                    tapTimer = now;
+                    tapCount++;                    tapTimer = now;
                     Debug.log('Tap: ' + tapCount + ' (interval=' + interval + 'ms)');
                 }
             }
 
             if (tapCount === 4) {
-                Debug.log('Tap: 4 - TOGGLE DEBUG');                tapCount = 0;
+                Debug.log('Tap: 4 - TOGGLE DEBUG');
+                tapCount = 0;
                 tapTimer = null;
                 Debug.toggle();
             }
@@ -188,13 +195,13 @@
 
             const storedShell = localStorage.getItem('shell_version') || CONFIG.SHELL_VERSION;
             const storedGame = localStorage.getItem('game_version') || CONFIG.GAME_VERSION_DEFAULT;
-
             Debug.log('Stored: shell=' + storedShell + ', game=' + storedGame);
 
             const shellUpdate = compareVersions(remoteVersions.shell, storedShell) > 0;
             const gameUpdate = compareVersions(remoteVersions.game, storedGame) > 0;
 
             updateVersionDisplay(storedShell, storedGame);
+
             if (shellUpdate || gameUpdate) {
                 document.querySelector('.btn--update').classList.add('visible');
                 Debug.log('Update available!');
@@ -237,13 +244,13 @@
             CONFIG.REPO_PATH + 's-manifest.json',
             CONFIG.REPO_PATH + 's-sw.js'
         ];
-
         const startTime = Date.now();
         const minDuration = 1000;
 
         for (let i = 0; i < filesToCache.length; i++) {
             try {
-                await fetch(filesToCache[i] + '?t=' + Date.now(), { cache: 'reload' });                
+                await fetch(filesToCache[i] + '?t=' + Date.now(), { cache: 'reload' });
+                
                 const percent = Math.round(((i + 1) / filesToCache.length) * 100);
                 progressText.textContent = percent + '%';
                 progressBar.querySelector('.progress-bar').style.width = percent + '%';
@@ -286,12 +293,12 @@
         document.getElementById('close-screen').classList.remove('visible');
         Debug.log('Show shell');
     }
-
     function showGame() {
         document.getElementById('shell-screen').classList.remove('screen--active');
         document.getElementById('game-screen').classList.add('screen--active');
         Debug.log('Show game');
     }
+
     function startGame() {
         if (window.Game && typeof window.Game.start === 'function') {
             window.Game.start();
@@ -334,13 +341,13 @@
                 .then(reg => {
                     swRegistration = reg;
                     Debug.log('SW registered');
-                })
-                .catch(err => Debug.log('SW error: ' + err.message));
+                })                .catch(err => Debug.log('SW error: ' + err.message));
         }
     }
 
     function initEventListeners() {
         Debug.log('Init listeners');
+
         const shellScreen = document.getElementById('shell-screen');
         if (shellScreen) {
             shellScreen.addEventListener('click', function(e) {
@@ -383,14 +390,14 @@
                 if (btn.dataset.action === 'confirm-update') performUpdate();
                 else if (btn.dataset.action === 'decline-update') declineUpdate();
             });
-        }
-    }
+        }    }
 
     async function init() {
         Debug.init();
         
         checkPWA();
-                const storedShell = localStorage.getItem('shell_version') || CONFIG.SHELL_VERSION;
+        
+        const storedShell = localStorage.getItem('shell_version') || CONFIG.SHELL_VERSION;
         const storedGame = localStorage.getItem('game_version') || CONFIG.GAME_VERSION_DEFAULT;
         updateVersionDisplay(storedShell, storedGame);
         
