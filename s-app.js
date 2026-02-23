@@ -2,8 +2,8 @@
     'use strict';
 
     var CONFIG = {
-        SHELL_VERSION: '2.4.4',
-        GAME_VERSION_DEFAULT: '1.0.5',
+        SHELL_VERSION: '2.4.5',
+        GAME_VERSION_DEFAULT: '1.0.6',
         REPO_PATH: '/scards/',
         DEBUG_MAX_LINES: 8
     };
