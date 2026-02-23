@@ -5,7 +5,7 @@
         config: {
             id: 'cards',
             name: 'Карточки',
-            version: '1.0.5'
+            version: '1.0.6'
         },
 
         cards: [],
