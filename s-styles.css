@@ -15,6 +15,7 @@
     --size-font-heading: 2.5rem;
     --size-font-button: 1.2rem;
     --size-font-version: 0.875rem;
+    --debug-panel-height: 160px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -33,6 +34,10 @@ body {
     line-height: 1.5;
 }
 
+body.debug-active {
+    padding-bottom: var(--debug-panel-height);
+}
+
 .screen {
     display: none;
     flex-direction: column;
@@ -42,11 +47,11 @@ body {
     height: 100%;
     position: absolute;
     top: 0;
-    left: 0;
-    padding: var(--spacing-md);
+    left: 0;    padding: var(--spacing-md);
 }
 
 .screen--active { display: flex; }
+
 .heading {
     font-size: var(--size-font-heading);
     text-transform: uppercase;
@@ -61,6 +66,14 @@ body {
     gap: var(--spacing-xs);
     margin-bottom: var(--spacing-lg);
     text-align: center;
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: 4px;
+    transition: background-color var(--timing-fast);
+}
+
+.versions:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .version-item {
@@ -83,8 +96,7 @@ body {
 
 .menu-actions {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    flex-direction: column;    align-items: center;
     gap: var(--spacing-xs);
 }
 
@@ -96,7 +108,8 @@ body {
     font-size: var(--size-font-button);
     margin: var(--spacing-xs);
     border-radius: 8px;
-    cursor: pointer;    width: var(--size-button-width);
+    cursor: pointer;
+    width: var(--size-button-width);
     text-align: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     transition: transform var(--timing-fast) ease;
@@ -132,8 +145,7 @@ body {
     padding: var(--spacing-md);
 }
 
-.modal--visible { display: flex; }
-.modal__title { color: var(--color-success); font-size: 2rem; margin-bottom: var(--spacing-md); text-align: center; }
+.modal--visible { display: flex; }.modal__title { color: var(--color-success); font-size: 2rem; margin-bottom: var(--spacing-md); text-align: center; }
 
 .modal-actions {
     display: flex;
@@ -145,7 +157,8 @@ body {
 .update-progress {
     display: none;
     width: 100%;
-    max-width: 300px;    margin-bottom: var(--spacing-md);
+    max-width: 300px;
+    margin-bottom: var(--spacing-md);
 }
 
 .update-progress.visible { display: block; }
@@ -181,8 +194,7 @@ body {
     background: var(--color-bg-primary);
     color: var(--color-text-primary);
     text-align: center;
-    position: fixed;
-    top: 0;
+    position: fixed;    top: 0;
     left: 0;
     width: 100%;
     z-index: 1000;
@@ -194,7 +206,8 @@ body {
     position: fixed;
     bottom: 0;
     left: 0;
-    width: 100%;    height: 160px;
+    width: 100%;
+    height: var(--debug-panel-height);
     background: rgba(0, 0, 0, 0.95);
     color: #00ff00;
     font-family: 'Courier New', monospace;
@@ -205,11 +218,6 @@ body {
     z-index: 99;
     border-top: 1px solid #333;
     display: none;
-    pointer-events: none;
-}
-
-.debug-panel * {
-    pointer-events: auto;
 }
 
 body.debug-active .debug-panel {
@@ -219,7 +227,6 @@ body.debug-active .debug-panel {
 .debug-panel-content {
     white-space: pre-wrap;
     word-break: break-all;
-    pointer-events: none;
 }
 
 .debug-line {
@@ -236,9 +243,8 @@ body.debug-active .debug-panel {
         --size-font-heading: 2rem;
         --size-font-button: 1rem;
         --size-button-width: 160px;
-    }
-}
+    }}
 
 @media (prefers-reduced-motion: reduce) {
-    .btn, .progress-bar { transition: none; }
+    .btn, .progress-bar, .versions { transition: none; }
 }
