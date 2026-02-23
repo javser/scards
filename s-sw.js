@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v2.4.0';
+const CACHE_VERSION = 'v2.4.3';
 const CACHE_NAME = 'shell-cache-' + CACHE_VERSION;
 
 const ASSETS = [
@@ -15,32 +15,40 @@ const ASSETS = [
     '/scards/icons/icon-512.png'
 ];
 
-self.addEventListener('message', e => {
-    if (e.data?.type === 'SKIP_WAITING') {
+self.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'SKIP_WAITING') {
         self.skipWaiting();
     }
 });
 
-self.addEventListener('install', e => {
+self.addEventListener('install', function(e) {
     e.waitUntil(
-        caches.open(CACHE_NAME).then(cache => {
+        caches.open(CACHE_NAME).then(function(cache) {
             return cache.addAll(ASSETS);
-        }).then(() => self.skipWaiting())
+        }).then(function() {
+            return self.skipWaiting();
+        })
     );
 });
 
-self.addEventListener('activate', e => {
+self.addEventListener('activate', function(e) {
     e.waitUntil(
-        caches.keys().then(names => {
+        caches.keys().then(function(names) {
             return Promise.all(
-                names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n))
+                names.filter(function(n) {
+                    return n !== CACHE_NAME;
+                }).map(function(n) {
+                    return caches.delete(n);
+                })
             );
-        }).then(() => self.clients.claim())
+        }).then(function() {
+            return self.clients.claim();
+        })
     );
 });
 
-self.addEventListener('fetch', e => {
-    const url = new URL(e.request.url);
+self.addEventListener('fetch', function(e) {
+    var url = new URL(e.request.url);
 
     if (url.pathname.includes('version.json')) {
         e.respondWith(fetch(e.request));
@@ -48,16 +56,18 @@ self.addEventListener('fetch', e => {
     }
 
     e.respondWith(
-        caches.match(e.request).then(cached => {
+        caches.match(e.request).then(function(cached) {
             if (cached) return cached;
 
-            return fetch(e.request).then(res => {
+            return fetch(e.request).then(function(res) {
                 if (e.request.method === 'GET' && res.ok) {
-                    const resClone = res.clone();
-                    caches.open(CACHE_NAME).then(c => c.put(e.request, resClone));
+                    var resClone = res.clone();
+                    caches.open(CACHE_NAME).then(function(c) {
+                        c.put(e.request, resClone);
+                    });
                 }
                 return res;
-            }).catch(() => {
+            }).catch(function() {
                 if (e.request.mode === 'navigate') {
                     return caches.match('/scards/s-index.html');
                 }
