@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    const Game = {
+    var Game = {
         config: {
             id: 'cards',
             name: 'Карточки',
@@ -50,13 +50,6 @@
             this.totalPairs = emojis.length;
             var grid = document.createElement('div');
             grid.className = 'cards-grid';
-            grid.style.display = 'grid';
-            grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
-            grid.style.gap = '10px';
-            grid.style.width = '100%';
-            grid.style.maxWidth = '400px';
-            grid.style.padding = '20px';
-            grid.style.margin = '0 auto';
 
             for (var k = 0; k < deck.length; k++) {
                 var card = this.createCard(deck[k], k);
@@ -88,63 +81,29 @@
 
             var el = document.createElement('div');
             el.className = 'card';
-            el.style.width = '70px';
-            el.style.height = '70px';
-            el.style.perspective = '1000px';
-            el.style.cursor = 'pointer';
-            el.style.position = 'relative';
 
             var inner = document.createElement('div');
             inner.className = 'card-inner';
-            inner.style.position = 'relative';            inner.style.width = '100%';
-            inner.style.height = '100%';
-            inner.style.transition = 'transform 0.6s';
-            inner.style.transformStyle = 'preserve-3d';
 
             var front = document.createElement('div');
             front.className = 'card-front';
-            front.style.position = 'absolute';
-            front.style.width = '100%';
-            front.style.height = '100%';
-            front.style.backfaceVisibility = 'hidden';
-            front.style.borderRadius = '8px';
-            front.style.display = 'flex';
-            front.style.alignItems = 'center';
-            front.style.justifyContent = 'center';
-            front.style.fontSize = '2rem';
-            front.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.3)';
-            front.style.background = 'linear-gradient(135deg, #34495e, #2c3e50)';
-            front.style.border = '2px solid #3498db';
 
             var back = document.createElement('div');
             back.className = 'card-back';
-            back.style.position = 'absolute';
-            back.style.width = '100%';
-            back.style.height = '100%';
-            back.style.backfaceVisibility = 'hidden';
-            back.style.borderRadius = '8px';
-            back.style.display = 'flex';
-            back.style.alignItems = 'center';
-            back.style.justifyContent = 'center';
-            back.style.fontSize = '2rem';
-            back.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.3)';
-            back.style.background = 'linear-gradient(135deg, #ecf0f1, #bdc3c7)';
-            back.style.transform = 'rotateY(180deg)';
-            back.style.border = '2px solid #2ecc71';
             back.textContent = emoji;
 
             inner.appendChild(front);
             inner.appendChild(back);
             el.appendChild(inner);
 
-            el.addEventListener('click', function(e) {
-                e.stopPropagation();
+            el.addEventListener('click', function(e) {                e.stopPropagation();
                 self.onCardClick(card);
             });
 
             card.element = el;
             return card;
         },
+
         onCardClick: function(card) {
             if (!this.gameStarted || this.gameWon) return;
             if (card.flipped || card.matched) return;
@@ -161,12 +120,12 @@
 
         flipCard: function(card) {
             card.flipped = true;
-            card.element.querySelector('.card-inner').style.transform = 'rotateY(180deg)';
+            card.element.classList.add('flipped');
         },
 
         unflipCard: function(card) {
             card.flipped = false;
-            card.element.querySelector('.card-inner').style.transform = 'rotateY(0deg)';
+            card.element.classList.remove('flipped');
         },
 
         checkMatch: function() {
@@ -179,14 +138,13 @@
             if (card1.emoji === card2.emoji) {
                 card1.matched = true;
                 card2.matched = true;
-                card1.element.querySelector('.card-back').style.background = 'linear-gradient(135deg, #2ecc71, #27ae60)';
-                card2.element.querySelector('.card-back').style.background = 'linear-gradient(135deg, #2ecc71, #27ae60)';
+                card1.element.classList.add('matched');
+                card2.element.classList.add('matched');
                 this.matchedPairs++;
 
                 if (window.Shell && window.Shell.debug) {
                     window.Shell.debug.log('Match! ' + this.matchedPairs + '/' + this.totalPairs);
                 }
-
                 if (this.matchedPairs === this.totalPairs) {
                     this.gameWon = true;
                     this.onGameWon();
@@ -195,6 +153,7 @@
                 this.unflipCard(card1);
                 this.unflipCard(card2);
             }
+
             this.flippedCards = [];
         },
 
@@ -235,14 +194,9 @@
         },
 
         createConfetti: function(colors) {
-            var confetti = document.createElement('div');
-            confetti.className = 'confetti';
+            var confetti = document.createElement('div');            confetti.className = 'confetti';
             confetti.style.pointerEvents = 'none';
-            confetti.style.position = 'fixed';
-            confetti.style.top = '-10px';
-            confetti.style.zIndex = '9999';
-            confetti.style.borderRadius = '2px';
-            confetti.style.animation = 'fall linear forwards';
+
             var startLeft = Math.random() * 100;
             var rotation = Math.random() * 360;
             var size = Math.random() * 10 + 5;
